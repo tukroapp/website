@@ -1,0 +1,20 @@
+{
+    "extends": "./.svelte-kit/tsconfig.json",
+    "compilerOptions": {
+        "rewriteRelativeImportExtensions": true,
+        "allowJs": true,
+        "checkJs": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "strict": true,
+        "moduleResolution": "bundler"
+    }
+    // Os apelidos de caminho são resolvidos por https://svelte.dev/docs/kit/configuration#alias
+    // menos o $lib, que fica em https://svelte.dev/docs/kit/configuration#files
+    //
+    // Para mexer em opções de topo, como include e exclude, o recomendado é estender a
+    // config gerada; veja https://svelte.dev/docs/kit/configuration#typescript
+}
