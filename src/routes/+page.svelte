@@ -33,6 +33,12 @@
     const firstName = $derived(profile.name.split(" ")[0]);
     const hasPending = $derived(requests.length > 0 || data.testimonials.length > 0);
 
+    // O backend já devolve a lista ordenada do dia 1 ao 31; aqui só sobem os de hoje.
+    const birthdays = $derived([
+        ...data.birthdays.birthdays.filter((entry) => entry.is_today),
+        ...data.birthdays.birthdays.filter((entry) => !entry.is_today),
+    ]);
+
     onMount(() => {
         // Abrir o feed zera o contador na hora e no servidor.
         auth.setFeedUnseen(0);
@@ -310,6 +316,40 @@
     </section>
 
     <aside class="flex flex-col gap-3">
+        {#if birthdays.length > 0}
+            <Card title="aniversariantes do mês" compact>
+                <ul class="flex flex-col gap-2">
+                    {#each birthdays as entry (entry.profile.id)}
+                        <li class="flex items-center gap-2">
+                            <a href="/@{entry.profile.slug}" class="shrink-0">
+                                <Avatar
+                                    src={entry.profile.avatar_url}
+                                    name={entry.profile.name}
+                                    class="size-8"
+                                    textClass="text-xs"
+                                />
+                            </a>
+                            <div class="min-w-0">
+                                <a
+                                    href="/@{entry.profile.slug}"
+                                    class="block truncate text-sm text-primary underline underline-offset-2"
+                                >
+                                    {entry.profile.name}
+                                </a>
+                                <span
+                                    class="block text-xs {entry.is_today
+                                        ? 'font-bold text-accent'
+                                        : 'text-muted'}"
+                                >
+                                    {entry.is_today ? "hoje" : `dia ${entry.day}`} · {entry.age} anos
+                                </span>
+                            </div>
+                        </li>
+                    {/each}
+                </ul>
+            </Card>
+        {/if}
+
         <Card
             title="amigos ({profile.friends_count ?? 0})"
             linkHref="/@{profile.slug}/friends"

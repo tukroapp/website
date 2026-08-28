@@ -10,7 +10,8 @@ export const GENERIC_ERROR_MESSAGE = "Ocorreu um erro inesperado. Tente novament
  * o que precisa corrigir.
  */
 const CODE_MESSAGES: Record<string, string> = {
-    length: "O texto está fora do tamanho permitido.",
+    length: "Está fora do tamanho permitido, ou tem itens demais.",
+    item_too_long: "Cada item pode ter no máximo 80 caracteres.",
     empty_or_whitespace: "O texto não pode ficar vazio.",
     required: "Preencha este campo.",
 };
@@ -52,10 +53,11 @@ export class ApiError extends Error {
         return Array.isArray(node) ? node : [];
     }
 
-    /** Mensagens de um campo, pulando os erros que o backend mandou sem texto. */
+    /** Mensagens de um campo. O backend às vezes manda só o código, então há um texto de reserva. */
     messagesAt(field: string): string[] {
-        const messages = this.errorsAt(field).map((error) => error.message);
-        return messages.filter((message) => message !== null);
+        return this.errorsAt(field).map(
+            (error) => error.message ?? CODE_MESSAGES[error.code] ?? GENERIC_ERROR_MESSAGE,
+        );
     }
 
     firstMessageAt(field: string): string | null {

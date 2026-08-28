@@ -5,8 +5,10 @@
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
+    import Icon from "#lib/components/Icon.svelte";
     import RatingIcon from "#lib/components/RatingIcon.svelte";
     import RichText from "#lib/components/RichText.svelte";
+    import TabPill from "#lib/components/TabPill.svelte";
     import Textarea from "#lib/components/Textarea.svelte";
     import { blockProfile } from "#lib/block";
     import { ApiError, NON_FIELD, toApiError } from "#lib/error";
@@ -19,6 +21,7 @@
         removeFriend,
         sendFriendRequest,
     } from "#lib/friend";
+    import { ageLabel, relationshipStatusLabel } from "#lib/profile";
     import { RATING_AXES, RATING_MAX, deleteRating, rateProfile } from "#lib/rating";
     import { loginUrl } from "#lib/redirect";
     import { REPORT_DETAILS_MAX_LENGTH, REPORT_REASONS, reportProfile } from "#lib/report";
@@ -119,20 +122,28 @@
     const firstName = $derived(profile.name.split(" ")[0]);
 
     const sections = $derived([
-        { label: "perfil", href: `/@${profile.slug}`, count: undefined },
-        { label: "recados", href: `/@${profile.slug}/scraps`, count: profile.scraps_count },
+        { label: "perfil", icon: "profile" as const, href: `/@${profile.slug}`, count: undefined },
+        {
+            label: "recados",
+            icon: "scraps" as const,
+            href: `/@${profile.slug}/scraps`,
+            count: profile.scraps_count,
+        },
         {
             label: "fotos",
+            icon: "photos" as const,
             href: `/@${profile.slug}/album?kind=photo`,
             count: data.media?.photo,
         },
         {
             label: "vídeos",
+            icon: "videos" as const,
             href: `/@${profile.slug}/album?kind=video`,
             count: data.media?.video,
         },
         {
             label: "depoimentos",
+            icon: "testimonials" as const,
             href: `/@${profile.slug}/testimonials`,
             count: profile.testimonials_count,
         },
@@ -140,15 +151,38 @@
 
     /** A faixa de contadores abaixo do nome, na mesma ordem do menu da esquerda. */
     const counters = $derived([
-        { label: "recados", value: profile.scraps_count?.toString() ?? "mural privado" },
-        { label: "fotos", value: data.media?.photo.toString() ?? "álbum privado" },
-        { label: "vídeos", value: data.media?.video.toString() ?? "álbum privado" },
-        { label: "depoimentos", value: profile.testimonials_count.toString() },
-        { label: "amigos", value: profile.friends_count?.toString() ?? "lista privada" },
-        { label: "fãs", value: profile.fans_count.toString() },
+        {
+            label: "recados",
+            icon: "scraps" as const,
+            value: profile.scraps_count?.toString() ?? "mural privado",
+        },
+        {
+            label: "fotos",
+            icon: "photos" as const,
+            value: data.media?.photo.toString() ?? "álbum privado",
+        },
+        {
+            label: "vídeos",
+            icon: "videos" as const,
+            value: data.media?.video.toString() ?? "álbum privado",
+        },
+        {
+            label: "depoimentos",
+            icon: "testimonials" as const,
+            value: profile.testimonials_count.toString(),
+        },
+        {
+            label: "amigos",
+            icon: "friends" as const,
+            value: profile.friends_count?.toString() ?? "lista privada",
+        },
+        { label: "fãs", icon: "fans" as const, value: profile.fans_count.toString() },
     ]);
 
-    const details = $derived([
+    type DetailRow = { label: string; value: string | string[] };
+
+    /** As linhas que aparecem para qualquer visitante, mesmo com o perfil detalhado fechado. */
+    const publicRows = $derived<DetailRow[]>([
         { label: "aniversário", value: formatBirthdate(profile.birthdate) },
         ...(profile.birthdate ? [{ label: "idade", value: ageLabel(profile.birthdate) }] : []),
         { label: "cidade natal", value: profile.city ?? "não informado" },
@@ -159,22 +193,56 @@
         { label: "quem sou eu", value: profile.bio ?? "não informado" },
     ]);
 
-    /** Anos completos, descontando o aniversário que ainda não chegou neste ano. */
-    function ageFrom(birthdate: string): number {
-        const [year, month, day] = birthdate.split("-").map(Number);
-        const today = new Date();
-        let age = today.getFullYear() - year;
-        const hadBirthday =
-            today.getMonth() + 1 > month ||
-            (today.getMonth() + 1 === month && today.getDate() >= day);
-        if (!hadBirthday) age -= 1;
-        return age;
+    /** Descarta rótulo com valor vazio: campo em branco não vira linha. */
+    function rowsFrom(entries: [string, string | string[] | null][]): DetailRow[] {
+        return entries
+            .filter(([, value]) => (Array.isArray(value) ? value.length > 0 : value != null))
+            .map(([label, value]) => ({ label, value: value as string | string[] }));
     }
 
-    function ageLabel(birthdate: string): string {
-        const age = ageFrom(birthdate);
-        return `${age} ${age === 1 ? "ano" : "anos"}`;
-    }
+    const tabRows = $derived.by(() => {
+        const d = profile.details;
+
+        const social = [...publicRows];
+        if (d) {
+            social.push(
+                ...rowsFrom([
+                    ["estado civil", relationshipStatusLabel(d.relationship_status)],
+                    ["país", d.country],
+                    ["estado", d.state],
+                    ["idiomas", d.languages],
+                    ["interesses", d.interests],
+                    ["quem quero conhecer", d.who_i_want_to_meet],
+                ]),
+            );
+        }
+
+        const professional = d
+            ? rowsFrom([
+                  ["ocupação", d.occupation],
+                  ["empresa", d.company],
+                  ["formação", d.education],
+              ])
+            : [];
+
+        const personal = d
+            ? rowsFrom([
+                  ["músicas", d.music],
+                  ["filmes", d.movies],
+                  ["livros", d.books],
+                  ["séries", d.tv_shows],
+                  ["comidas", d.foods],
+                  ["esportes", d.sports],
+                  ["bichos", d.pets],
+                  ["estilo", d.fashion_style],
+              ])
+            : [];
+
+        return { social, professional, personal };
+    });
+
+    /** Perfil fechado só mostra as linhas públicas; aberto segue a aba da URL. */
+    const activeRows = $derived(profile.details ? tabRows[data.tab] : tabRows.social);
 
     /**
      * A data de nascimento é um YYYY-MM-DD puro, então ela é montada no horário local.
@@ -436,12 +504,16 @@
                         {#if section.href}
                             <a
                                 href={section.href}
-                                class="text-primary underline underline-offset-2"
+                                class="flex items-center gap-1.5 text-primary underline underline-offset-2"
                             >
+                                <Icon name={section.icon} class="size-4 shrink-0" />
                                 {section.label}
                             </a>
                         {:else}
-                            <span class="text-muted">{section.label}</span>
+                            <span class="flex items-center gap-1.5 text-muted">
+                                <Icon name={section.icon} class="size-4 shrink-0" />
+                                {section.label}
+                            </span>
                         {/if}
                         {#if section.count != null}
                             <span class="text-xs text-muted">{section.count}</span>
@@ -539,7 +611,10 @@
             <ul class="flex flex-wrap items-start gap-x-5 gap-y-2 text-xs text-muted">
                 {#each counters as counter}
                     <li class="flex flex-col gap-0.5 whitespace-nowrap">
-                        <span>{counter.label}</span>
+                        <span class="flex items-center gap-1">
+                            <Icon name={counter.icon} class="size-4" />
+                            {counter.label}
+                        </span>
                         <span class="flex min-h-5 items-center font-bold text-content">
                             {counter.value}
                         </span>
@@ -621,25 +696,44 @@
             </div>
         {/if}
 
-        <div class="flex flex-col">
-            <span
-                class="w-fit rounded-t-theme border border-b-0 border-line bg-surface px-4 py-1 text-sm font-bold text-content"
-            >
-                social
-            </span>
+        <div class="flex flex-col gap-2">
+            {#if profile.details}
+                <div class="flex flex-wrap gap-2">
+                    <TabPill href="/@{profile.slug}" active={data.tab === "social"}>social</TabPill>
+                    <TabPill
+                        href="/@{profile.slug}?tab=professional"
+                        active={data.tab === "professional"}
+                    >
+                        profissional
+                    </TabPill>
+                    <TabPill href="/@{profile.slug}?tab=personal" active={data.tab === "personal"}>
+                        pessoal
+                    </TabPill>
+                </div>
+            {/if}
 
-            <dl
-                class="grid grid-cols-[7rem_minmax(0,1fr)] overflow-hidden rounded-theme rounded-tl-none border border-line bg-surface text-sm"
-            >
-                {#each details as row, index}
-                    <dt class="px-3 py-1.5 text-end text-muted {index % 2 ? 'bg-canvas' : ''}">
-                        {row.label}:
-                    </dt>
-                    <dd class="px-3 py-1.5 text-content {index % 2 ? 'bg-canvas' : ''}">
-                        {row.value}
-                    </dd>
-                {/each}
-            </dl>
+            {#if activeRows.length === 0}
+                <p class="rounded-theme border border-line bg-surface px-3 py-2 text-sm text-muted">
+                    {firstName} não preencheu esta parte do perfil.
+                </p>
+            {:else}
+                <dl
+                    class="grid grid-cols-[8rem_minmax(0,1fr)] overflow-hidden rounded-theme border border-line bg-surface text-sm"
+                >
+                    {#each activeRows as row, index}
+                        <dt class="px-3 py-1.5 text-end text-muted {index % 2 ? 'bg-canvas' : ''}">
+                            {row.label}:
+                        </dt>
+                        <dd class="px-3 py-1.5 text-content {index % 2 ? 'bg-canvas' : ''}">
+                            {Array.isArray(row.value) ? row.value.join(", ") : row.value}
+                        </dd>
+                    {/each}
+                </dl>
+            {/if}
+
+            {#if !profile.details}
+                <p class="text-xs text-muted">{firstName} restringiu o resto do perfil.</p>
+            {/if}
         </div>
 
         <div class="flex flex-col gap-2 rounded-theme border border-line bg-surface p-4">

@@ -2,7 +2,7 @@ import { redirect } from "@sveltejs/kit";
 import { fetchProfileCommunities } from "#lib/community";
 import { fetchFeed } from "#lib/feed";
 import { fetchFriendRequests } from "#lib/friend";
-import { fetchProfile } from "#lib/profile";
+import { fetchBirthdays, fetchProfile } from "#lib/profile";
 import { loginUrl } from "#lib/redirect";
 import { fetchProfileScraps } from "#lib/scrap";
 import { auth } from "#lib/state/user.svelte";
@@ -20,14 +20,16 @@ export async function load({ fetch, url }: PageLoadEvent) {
     const user = auth.user;
     if (!user) redirect(302, loginUrl(url.pathname));
 
-    const [profile, requests, testimonials, feed, scraps, communities] = await Promise.all([
-        fetchProfile(user.slug, fetch),
-        fetchFriendRequests("received", null, REQUEST_PREVIEW, fetch),
-        fetchTestimonials("received", "pending", null, TESTIMONIAL_PREVIEW, fetch),
-        fetchFeed(null, FEED_PAGE, fetch),
-        fetchProfileScraps(user.slug, null, SCRAP_PREVIEW, fetch),
-        fetchProfileCommunities(user.slug, null, COMMUNITY_PREVIEW, fetch),
-    ]);
+    const [profile, requests, testimonials, feed, scraps, communities, birthdays] =
+        await Promise.all([
+            fetchProfile(user.slug, fetch),
+            fetchFriendRequests("received", null, REQUEST_PREVIEW, fetch),
+            fetchTestimonials("received", "pending", null, TESTIMONIAL_PREVIEW, fetch),
+            fetchFeed(null, FEED_PAGE, fetch),
+            fetchProfileScraps(user.slug, null, SCRAP_PREVIEW, fetch),
+            fetchProfileCommunities(user.slug, null, COMMUNITY_PREVIEW, fetch),
+            fetchBirthdays(fetch),
+        ]);
 
     return {
         profile,
@@ -39,5 +41,6 @@ export async function load({ fetch, url }: PageLoadEvent) {
         feedCursor: feed.next_cursor,
         scraps: scraps.results,
         communities: communities.results,
+        birthdays,
     };
 }

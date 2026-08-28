@@ -105,6 +105,8 @@ Reuse os componentes que já existem em vez de recolar o markup:
 | `Card`              | Bloco com título e link de "ver todos" |
 | `ConfirmDialog`     | Confirmação de ação destrutiva         |
 | `Input`, `Textarea` | Campos de formulário e caixa de busca  |
+| `TagInput`          | Lista editável de itens curtos (tags)  |
+| `Icon`              | Ícone de traço (Heroicons) por nome    |
 | `FieldError`        | Mensagens de erro de um campo          |
 | `NotificationRow`   | Conteúdo de uma linha de notificação   |
 

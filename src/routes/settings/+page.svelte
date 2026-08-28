@@ -9,10 +9,15 @@
     import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
     import FieldError from "#lib/components/FieldError.svelte";
     import Input from "#lib/components/Input.svelte";
+    import TabPill from "#lib/components/TabPill.svelte";
+    import TagInput from "#lib/components/TagInput.svelte";
     import Textarea from "#lib/components/Textarea.svelte";
     import ThemeSwitcher from "#lib/components/ThemeSwitcher.svelte";
+    import { LANGUAGES_MAX_ITEMS, LIST_MAX_ITEMS, RELATIONSHIP_STATUS_OPTIONS } from "#lib/profile";
     import { auth } from "#lib/state/user.svelte";
-    import type { MeResponse, PrivacySettings, Visibility } from "#lib/types";
+    import type { MeResponse, PrivacySettings, RelationshipStatus, Visibility } from "#lib/types";
+
+    type ProfileTab = "social" | "professional" | "personal";
 
     const MIN_PASSWORD_LENGTH = 8;
     const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
@@ -40,12 +45,32 @@
 
     const user = $derived(auth.user as MeResponse);
 
+    let profileTab = $state<ProfileTab>("social");
+
+    /** Espelha o perfil inteiro: o PUT substitui, então tudo precisa ir junto em cada gravação. */
     let profileForm = $state({
         name: "",
         status: "",
         city: "",
         birthdate: "",
         bio: "",
+        relationship_status: "" as RelationshipStatus | "",
+        country: "",
+        state: "",
+        languages: [] as string[],
+        interests: [] as string[],
+        who_i_want_to_meet: "",
+        occupation: "",
+        company: "",
+        education: "",
+        music: [] as string[],
+        movies: [] as string[],
+        books: [] as string[],
+        tv_shows: [] as string[],
+        foods: [] as string[],
+        sports: [] as string[],
+        pets: "",
+        fashion_style: "",
     });
     let privacyForm = $state<PrivacySettings>({
         profile_visibility: "everyone",
@@ -86,6 +111,23 @@
             city: me.city ?? "",
             birthdate: me.birthdate ?? "",
             bio: me.bio ?? "",
+            relationship_status: me.relationship_status ?? "",
+            country: me.country ?? "",
+            state: me.state ?? "",
+            languages: [...me.languages],
+            interests: [...me.interests],
+            who_i_want_to_meet: me.who_i_want_to_meet ?? "",
+            occupation: me.occupation ?? "",
+            company: me.company ?? "",
+            education: me.education ?? "",
+            music: [...me.music],
+            movies: [...me.movies],
+            books: [...me.books],
+            tv_shows: [...me.tv_shows],
+            foods: [...me.foods],
+            sports: [...me.sports],
+            pets: me.pets ?? "",
+            fashion_style: me.fashion_style ?? "",
         };
         privacyForm = {
             profile_visibility: me.profile_visibility,
@@ -120,6 +162,23 @@
                 bio: orNull(profileForm.bio),
                 // PUT /me substitui tudo, então a foto atual tem que ir junto.
                 avatar_url: user.avatar_url,
+                relationship_status: profileForm.relationship_status || null,
+                country: orNull(profileForm.country),
+                state: orNull(profileForm.state),
+                languages: profileForm.languages,
+                interests: profileForm.interests,
+                who_i_want_to_meet: orNull(profileForm.who_i_want_to_meet),
+                occupation: orNull(profileForm.occupation),
+                company: orNull(profileForm.company),
+                education: orNull(profileForm.education),
+                music: profileForm.music,
+                movies: profileForm.movies,
+                books: profileForm.books,
+                tv_shows: profileForm.tv_shows,
+                foods: profileForm.foods,
+                sports: profileForm.sports,
+                pets: orNull(profileForm.pets),
+                fashion_style: orNull(profileForm.fashion_style),
             });
             toast.success("Perfil atualizado");
         } catch (error) {
@@ -318,38 +377,210 @@
             <FieldError messages={profileErrors.name} />
         </div>
 
-        <div class="flex flex-col gap-1.5">
-            <label for="status" class="text-sm font-medium text-content">Status</label>
-            <Input
-                id="status"
-                type="text"
-                placeholder="Uma frase boba"
-                bind:value={profileForm.status}
-            />
-            <FieldError messages={profileErrors.status} />
+        <div class="flex flex-wrap gap-2 border-b border-line pb-3">
+            <TabPill active={profileTab === "social"} onclick={() => (profileTab = "social")}>
+                social
+            </TabPill>
+            <TabPill
+                active={profileTab === "professional"}
+                onclick={() => (profileTab = "professional")}
+            >
+                profissional
+            </TabPill>
+            <TabPill active={profileTab === "personal"} onclick={() => (profileTab = "personal")}>
+                pessoal
+            </TabPill>
         </div>
 
-        <div class="flex flex-col gap-1.5">
-            <label for="city" class="text-sm font-medium text-content">Cidade</label>
-            <Input id="city" type="text" bind:value={profileForm.city} />
-            <FieldError messages={profileErrors.city} />
-        </div>
+        {#if profileTab === "social"}
+            <div class="flex flex-col gap-1.5">
+                <label for="status" class="text-sm font-medium text-content">Status</label>
+                <Input
+                    id="status"
+                    type="text"
+                    placeholder="Uma frase boba"
+                    bind:value={profileForm.status}
+                />
+                <FieldError messages={profileErrors.status} />
+            </div>
 
-        <div class="flex flex-col gap-1.5">
-            <label for="birthdate" class="text-sm font-medium text-content">
-                Data de nascimento
-            </label>
-            <Input id="birthdate" type="date" bind:value={profileForm.birthdate} />
-            <FieldError messages={profileErrors.birthdate} />
-        </div>
+            <div class="flex flex-col gap-1.5">
+                <label for="bio" class="text-sm font-medium text-content">Quem sou eu</label>
+                <Textarea id="bio" variant="form" rows={4} bind:value={profileForm.bio} />
+                <FieldError messages={profileErrors.bio} />
+            </div>
 
-        <div class="flex flex-col gap-1.5">
-            <label for="bio" class="text-sm font-medium text-content">Sobre você</label>
-            <Textarea id="bio" variant="form" rows={4} bind:value={profileForm.bio} />
-            <FieldError messages={profileErrors.bio} />
-        </div>
+            <div class="flex flex-col gap-1.5">
+                <label for="relationship_status" class="text-sm font-medium text-content">
+                    Estado civil
+                </label>
+                <select
+                    id="relationship_status"
+                    bind:value={profileForm.relationship_status}
+                    class="w-full rounded-theme border-line bg-canvas px-3 py-2 text-base text-content focus:border-primary focus:ring-primary sm:text-sm"
+                >
+                    <option value="">Não informado</option>
+                    {#each RELATIONSHIP_STATUS_OPTIONS as option}
+                        <option value={option.value}>{option.label}</option>
+                    {/each}
+                </select>
+                <FieldError messages={profileErrors.relationship_status} />
+            </div>
 
-        <div class="flex justify-end">
+            <div class="flex flex-col gap-1.5">
+                <label for="birthdate" class="text-sm font-medium text-content">
+                    Data de nascimento
+                </label>
+                <Input id="birthdate" type="date" bind:value={profileForm.birthdate} />
+                <FieldError messages={profileErrors.birthdate} />
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div class="flex flex-col gap-1.5">
+                    <label for="country" class="text-sm font-medium text-content">País</label>
+                    <Input
+                        id="country"
+                        type="text"
+                        maxlength={80}
+                        bind:value={profileForm.country}
+                    />
+                    <FieldError messages={profileErrors.country} />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="state" class="text-sm font-medium text-content">Estado</label>
+                    <Input id="state" type="text" maxlength={80} bind:value={profileForm.state} />
+                    <FieldError messages={profileErrors.state} />
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="city" class="text-sm font-medium text-content">Cidade</label>
+                <Input id="city" type="text" bind:value={profileForm.city} />
+                <FieldError messages={profileErrors.city} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="languages" class="text-sm font-medium text-content">Idiomas</label>
+                <TagInput
+                    id="languages"
+                    maxItems={LANGUAGES_MAX_ITEMS}
+                    placeholder="Português, Inglês..."
+                    bind:value={profileForm.languages}
+                />
+                <FieldError messages={profileErrors.languages} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="interests" class="text-sm font-medium text-content">Interesses</label>
+                <TagInput
+                    id="interests"
+                    maxItems={LIST_MAX_ITEMS}
+                    placeholder="Fliperama, rock progressivo..."
+                    bind:value={profileForm.interests}
+                />
+                <FieldError messages={profileErrors.interests} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="who_i_want_to_meet" class="text-sm font-medium text-content">
+                    Quem eu quero conhecer
+                </label>
+                <Textarea
+                    id="who_i_want_to_meet"
+                    variant="form"
+                    rows={3}
+                    bind:value={profileForm.who_i_want_to_meet}
+                />
+                <FieldError messages={profileErrors.who_i_want_to_meet} />
+            </div>
+        {:else if profileTab === "professional"}
+            <div class="flex flex-col gap-1.5">
+                <label for="occupation" class="text-sm font-medium text-content">Ocupação</label>
+                <Input
+                    id="occupation"
+                    type="text"
+                    maxlength={120}
+                    bind:value={profileForm.occupation}
+                />
+                <FieldError messages={profileErrors.occupation} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="company" class="text-sm font-medium text-content">Empresa</label>
+                <Input id="company" type="text" maxlength={120} bind:value={profileForm.company} />
+                <FieldError messages={profileErrors.company} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="education" class="text-sm font-medium text-content">Formação</label>
+                <Input
+                    id="education"
+                    type="text"
+                    maxlength={200}
+                    bind:value={profileForm.education}
+                />
+                <FieldError messages={profileErrors.education} />
+            </div>
+        {:else}
+            <div class="flex flex-col gap-1.5">
+                <label for="music" class="text-sm font-medium text-content">Músicas</label>
+                <TagInput id="music" maxItems={LIST_MAX_ITEMS} bind:value={profileForm.music} />
+                <FieldError messages={profileErrors.music} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="movies" class="text-sm font-medium text-content">Filmes</label>
+                <TagInput id="movies" maxItems={LIST_MAX_ITEMS} bind:value={profileForm.movies} />
+                <FieldError messages={profileErrors.movies} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="books" class="text-sm font-medium text-content">Livros</label>
+                <TagInput id="books" maxItems={LIST_MAX_ITEMS} bind:value={profileForm.books} />
+                <FieldError messages={profileErrors.books} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="tv_shows" class="text-sm font-medium text-content">Séries</label>
+                <TagInput
+                    id="tv_shows"
+                    maxItems={LIST_MAX_ITEMS}
+                    bind:value={profileForm.tv_shows}
+                />
+                <FieldError messages={profileErrors.tv_shows} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="foods" class="text-sm font-medium text-content">Comidas</label>
+                <TagInput id="foods" maxItems={LIST_MAX_ITEMS} bind:value={profileForm.foods} />
+                <FieldError messages={profileErrors.foods} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="sports" class="text-sm font-medium text-content">Esportes</label>
+                <TagInput id="sports" maxItems={LIST_MAX_ITEMS} bind:value={profileForm.sports} />
+                <FieldError messages={profileErrors.sports} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="pets" class="text-sm font-medium text-content">Bichos</label>
+                <Input id="pets" type="text" maxlength={120} bind:value={profileForm.pets} />
+                <FieldError messages={profileErrors.pets} />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label for="fashion_style" class="text-sm font-medium text-content">Estilo</label>
+                <Input
+                    id="fashion_style"
+                    type="text"
+                    maxlength={120}
+                    bind:value={profileForm.fashion_style}
+                />
+                <FieldError messages={profileErrors.fashion_style} />
+            </div>
+        {/if}
+
+        <div class="flex justify-end border-t border-line pt-3">
             <Button type="submit" disabled={savingProfile}>salvar perfil</Button>
         </div>
     </form>

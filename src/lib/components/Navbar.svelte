@@ -2,6 +2,8 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { toast } from "svelte-sonner";
+    import Icon from "#lib/components/Icon.svelte";
+    import type { IconName } from "#lib/components/Icon.svelte";
     import NotificationsMenu from "#lib/components/NotificationsMenu.svelte";
     import TabPill from "#lib/components/TabPill.svelte";
     import { auth } from "#lib/state/user.svelte";
@@ -16,16 +18,18 @@
     const unreadNotifications = $derived(auth.user?.unread_notifications_count ?? 0);
     const feedUnseen = $derived(auth.feedUnseen);
 
-    const links = $derived([
-        { label: "Início", href: "/" },
-        { label: "Perfil", href: profilePath },
-        { label: "Buscar", href: "/search" },
-        { label: "Recados", href: scrapsPath },
-        { label: "Mensagens", href: "/messages" },
-        { label: "Comunidades", href: "/community" },
-        { label: "Configurações", href: "/settings" },
+    const links = $derived<{ label: string; href: string; icon: IconName }[]>([
+        { label: "Início", href: "/", icon: "home" },
+        { label: "Perfil", href: profilePath, icon: "profile" },
+        { label: "Buscar", href: "/search", icon: "search" },
+        { label: "Recados", href: scrapsPath, icon: "scraps" },
+        { label: "Mensagens", href: "/messages", icon: "messages" },
+        { label: "Comunidades", href: "/community", icon: "communities" },
+        { label: "Configurações", href: "/settings", icon: "settings" },
         // Toda rota /admin responde 403 para os outros, então o item fica escondido.
-        ...(auth.user?.is_superuser ? [{ label: "Denúncias", href: "/admin/reports" }] : []),
+        ...(auth.user?.is_superuser
+            ? [{ label: "Denúncias", href: "/admin/reports", icon: "reports" as const }]
+            : []),
     ]);
 
     $effect(() => {
@@ -41,14 +45,17 @@
     }
 </script>
 
-{#snippet pill(label: string, href: string)}
+{#snippet pill(label: string, href: string, icon: IconName, iconClass: string)}
     <TabPill {href} active={currentPath === href}>
-        {label}
-        {#if href === "/messages" && unreadMessages > 0}
-            <span>({unreadMessages})</span>
-        {:else if href === "/" && feedUnseen > 0}
-            <span class="inline-block size-1.5 rounded-full bg-accent align-middle"></span>
-        {/if}
+        <span class="flex items-center gap-1.5">
+            <Icon name={icon} class={iconClass} />
+            {label}
+            {#if href === "/messages" && unreadMessages > 0}
+                <span>({unreadMessages})</span>
+            {:else if href === "/" && feedUnseen > 0}
+                <span class="inline-block size-1.5 rounded-full bg-accent align-middle"></span>
+            {/if}
+        </span>
     </TabPill>
 {/snippet}
 
@@ -57,9 +64,15 @@
         <div class="flex h-12 items-center gap-2">
             <a href="/" class="text-2xl font-bold tracking-tight text-accent lowercase">tukro</a>
 
+            <!-- O ícone só entra a partir de xl: entre lg e xl não cabe rótulo mais ícone. -->
             <nav class="hidden min-w-0 flex-1 items-center gap-1.5 lg:flex">
                 {#each links as link (link.href)}
-                    {@render pill(link.label, link.href)}
+                    {@render pill(
+                        link.label,
+                        link.href,
+                        link.icon,
+                        "hidden size-4 shrink-0 xl:block",
+                    )}
                 {/each}
             </nav>
 
@@ -90,12 +103,15 @@
         {#if open}
             <nav id="navbar-menu" class="flex flex-col gap-1.5 border-t border-line py-2 lg:hidden">
                 {#each links as link (link.href)}
-                    {@render pill(link.label, link.href)}
+                    {@render pill(link.label, link.href, link.icon, "size-4 shrink-0")}
                 {/each}
 
                 <TabPill href="/notifications" active={currentPath === "/notifications"}>
-                    Notificações
-                    {#if unreadNotifications > 0}<span>({unreadNotifications})</span>{/if}
+                    <span class="flex items-center gap-1.5">
+                        <Icon name="notifications" class="size-4 shrink-0" />
+                        Notificações
+                        {#if unreadNotifications > 0}<span>({unreadNotifications})</span>{/if}
+                    </span>
                 </TabPill>
 
                 <button
