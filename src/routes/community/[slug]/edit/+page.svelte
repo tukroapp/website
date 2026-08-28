@@ -17,6 +17,7 @@
         uploadCommunityAvatar,
     } from "#lib/community";
     import { toApiError } from "#lib/error";
+    import { compressImage } from "#lib/image";
     import { toastApiError } from "#lib/toast";
 
     let { data } = $props();
@@ -80,7 +81,9 @@
         avatarError = null;
         savingAvatar = true;
         try {
-            community = await uploadCommunityAvatar(community.slug, file);
+            // O limite vale para o arquivo cru; a compressão depois só alivia o bucket.
+            const compressed = await compressImage(file);
+            community = await uploadCommunityAvatar(community.slug, compressed);
             toast.success("Imagem atualizada");
         } catch (error) {
             const apiError = toApiError(error);

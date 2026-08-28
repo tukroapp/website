@@ -7,6 +7,7 @@
     import FieldError from "#lib/components/FieldError.svelte";
     import Input from "#lib/components/Input.svelte";
     import Textarea from "#lib/components/Textarea.svelte";
+    import { compressImage } from "#lib/image";
     import {
         COMMUNITY_AVATAR_TYPES,
         COMMUNITY_DESCRIPTION_MAX_LENGTH,
@@ -24,14 +25,16 @@
     let avatarFile = $state<File | null>(null);
     let avatarPreview = $state<string | null>(null);
     let avatarError = $state<string | null>(null);
+    let compressingAvatar = $state(false);
 
-    function pickAvatar(event: Event) {
+    async function pickAvatar(event: Event) {
         const input = event.currentTarget as HTMLInputElement;
-        const file = input.files?.[0];
+        const chosen = input.files?.[0];
         input.value = "";
-        if (!file) return;
+        if (!chosen) return;
 
-        const problem = communityAvatarProblem(file);
+        // O limite vale para o arquivo cru; a compressão depois só alivia o bucket.
+        const problem = communityAvatarProblem(chosen);
         if (problem) {
             avatarError = problem;
             return;
@@ -39,8 +42,15 @@
 
         if (avatarPreview) URL.revokeObjectURL(avatarPreview);
         avatarError = null;
-        avatarFile = file;
-        avatarPreview = URL.createObjectURL(file);
+        avatarFile = null;
+        avatarPreview = null;
+        compressingAvatar = true;
+        try {
+            avatarFile = await compressImage(chosen);
+        } finally {
+            compressingAvatar = false;
+        }
+        avatarPreview = URL.createObjectURL(avatarFile);
     }
 
     function clearAvatar() {
@@ -108,12 +118,13 @@
                     for="avatar"
                     class="inline-flex h-9 cursor-pointer items-center justify-center rounded-theme border border-line bg-surface px-4 text-sm font-medium text-content hover:bg-surface-hover"
                 >
-                    escolher imagem
+                    {compressingAvatar ? "comprimindo..." : "escolher imagem"}
                 </label>
                 <input
                     id="avatar"
                     type="file"
                     accept={COMMUNITY_AVATAR_TYPES.join(",")}
+                    disabled={compressingAvatar}
                     onchange={pickAvatar}
                     class="sr-only"
                 />

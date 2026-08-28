@@ -316,6 +316,43 @@
     </section>
 
     <aside class="flex flex-col gap-3">
+        <Card title="quem me visitou" linkHref="/visitors" linkLabel="ver todas" compact>
+            {#if !data.visitors.enabled}
+                <p class="text-sm text-muted">
+                    Registro de visitas desligado.
+                    <a href="/settings" class="text-primary underline underline-offset-2">ligar</a>
+                </p>
+            {:else if data.visitors.recent.length === 0}
+                <p class="text-sm text-muted">Ninguém nos últimos 7 dias.</p>
+            {:else}
+                <ul class="flex flex-col gap-2">
+                    {#each data.visitors.recent.slice(0, 6) as visitor (visitor.profile.id)}
+                        <li class="flex items-center gap-2">
+                            <a href="/@{visitor.profile.slug}" class="shrink-0">
+                                <Avatar
+                                    src={visitor.profile.avatar_url}
+                                    name={visitor.profile.name}
+                                    class="size-8"
+                                    textClass="text-xs"
+                                />
+                            </a>
+                            <div class="min-w-0">
+                                <a
+                                    href="/@{visitor.profile.slug}"
+                                    class="block truncate text-sm text-primary underline underline-offset-2"
+                                >
+                                    {visitor.profile.name}
+                                </a>
+                                <span class="block truncate text-xs text-muted">
+                                    {relativeTime(visitor.visited_at)}
+                                </span>
+                            </div>
+                        </li>
+                    {/each}
+                </ul>
+            {/if}
+        </Card>
+
         {#if birthdays.length > 0}
             <Card title="aniversariantes do mês" compact>
                 <ul class="flex flex-col gap-2">
@@ -364,14 +401,14 @@
                     </a>
                 </p>
             {:else}
-                <ul class="grid grid-cols-3 gap-2">
+                <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-3">
                     {#each profile.friends as friend (friend.id)}
                         <li>
                             <a href="/@{friend.slug}" class="block text-center">
                                 <Avatar
                                     src={friend.avatar_url}
                                     name={friend.name}
-                                    class="aspect-square w-full"
+                                    class="mx-auto aspect-square w-full max-w-24"
                                 />
                                 <span class="mt-1 block truncate text-xs text-content">
                                     {friend.name}
@@ -392,14 +429,14 @@
                     </a>
                 </p>
             {:else}
-                <ul class="grid grid-cols-3 gap-2">
+                <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-3">
                     {#each data.communities as community (community.id)}
                         <li>
                             <a href="/community/{community.slug}" class="block text-center">
                                 <Avatar
                                     src={community.avatar_url}
                                     name={community.name}
-                                    class="aspect-square w-full"
+                                    class="mx-auto aspect-square w-full max-w-24"
                                 />
                                 <span class="mt-1 block truncate text-xs text-content">
                                     {community.name}

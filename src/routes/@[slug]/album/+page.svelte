@@ -7,6 +7,7 @@
     import LoadMore from "#lib/components/LoadMore.svelte";
     import TabPill from "#lib/components/TabPill.svelte";
     import { ApiError } from "#lib/error";
+    import { compressImage } from "#lib/image";
     import {
         MEDIA_KINDS,
         MEDIA_LIMITS,
@@ -35,6 +36,7 @@
     let preview = $state<string | null>(null);
     let uploadError = $state<string | null>(null);
     let uploading = $state(false);
+    let compressing = $state(false);
     let progress = $state(0);
 
     const profile = $derived(data.profile);
@@ -93,7 +95,7 @@
         progress = 0;
     }
 
-    function pickFile(event: Event) {
+    async function pickFile(event: Event) {
         const input = event.currentTarget as HTMLInputElement;
         const chosen = input.files?.[0];
         input.value = "";
@@ -106,8 +108,22 @@
             return;
         }
 
-        file = chosen;
-        preview = URL.createObjectURL(chosen);
+        let picked = chosen;
+        if (mediaKindOf(chosen) === "photo") {
+            const tabAtPick = kind;
+            compressing = true;
+            try {
+                picked = await compressImage(chosen);
+            } finally {
+                compressing = false;
+            }
+            // Trocar de aba durante a compressão descarta a escolha: o `$effect` do
+            // `kind` já rodou `clearFile`, então aqui é só sair sem ressuscitar nada.
+            if (kind !== tabAtPick) return;
+        }
+
+        file = picked;
+        preview = URL.createObjectURL(picked);
     }
 
     async function upload() {
@@ -231,13 +247,13 @@
                         for="media"
                         class="inline-flex h-9 cursor-pointer items-center justify-center rounded-theme border border-line bg-surface px-4 text-sm font-medium text-content hover:bg-surface-hover"
                     >
-                        escolher arquivo
+                        {compressing ? "comprimindo..." : "escolher arquivo"}
                     </label>
                     <input
                         id="media"
                         type="file"
                         accept="image/*,video/*"
-                        disabled={uploading}
+                        disabled={uploading || compressing}
                         onchange={pickFile}
                         class="sr-only"
                     />

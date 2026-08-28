@@ -2,6 +2,7 @@
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
     import { ApiError, toApiError } from "#lib/error";
+    import { compressImage } from "#lib/image";
     import { toastApiError } from "#lib/toast";
     import { sendVerificationEmail } from "#lib/account";
     import Avatar from "#lib/components/Avatar.svelte";
@@ -190,15 +191,15 @@
 
     async function pickAvatar(event: Event) {
         const input = event.currentTarget as HTMLInputElement;
-        const file = input.files?.[0];
+        const chosen = input.files?.[0];
         input.value = "";
-        if (!file) return;
+        if (!chosen) return;
 
-        if (!AVATAR_TYPES.includes(file.type)) {
+        if (!AVATAR_TYPES.includes(chosen.type)) {
             avatarError = "Formato não aceito. Use JPEG, PNG, WebP ou GIF.";
             return;
         }
-        if (file.size > AVATAR_MAX_BYTES) {
+        if (chosen.size > AVATAR_MAX_BYTES) {
             avatarError = "A imagem precisa ter no máximo 2 MB.";
             return;
         }
@@ -206,7 +207,9 @@
         avatarError = null;
         savingAvatar = true;
         try {
-            await auth.uploadAvatar(file);
+            // O limite vale para o arquivo cru; a compressão depois só alivia o bucket.
+            const compressed = await compressImage(chosen);
+            await auth.uploadAvatar(compressed);
             toast.success("Foto atualizada");
         } catch (error) {
             const apiError = toApiError(error);

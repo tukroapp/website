@@ -1,6 +1,7 @@
 <script lang="ts">
     import "./layout.css";
     import { Toaster } from "svelte-sonner";
+    import GuestNavbar from "#lib/components/GuestNavbar.svelte";
     import LinkPrompt from "#lib/components/LinkPrompt.svelte";
     import Navbar from "#lib/components/Navbar.svelte";
     import NavigationProgress from "#lib/components/NavigationProgress.svelte";
@@ -68,6 +69,8 @@
 />
 {#if auth.user}
     <Navbar />
+{:else}
+    <GuestNavbar />
 {/if}
 
 <LinkPrompt />

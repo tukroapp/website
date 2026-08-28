@@ -121,6 +121,11 @@
     const isOwner = $derived(relationship === "self");
     const firstName = $derived(profile.name.split(" ")[0]);
 
+    // Sem login e sem permissão de recado, o box de ações fica sem nenhum item.
+    const showAsideActions = $derived(
+        isOwner || profile.can_write_scrap || relationship !== "anonymous",
+    );
+
     const sections = $derived([
         { label: "perfil", icon: "profile" as const, href: `/@${profile.slug}`, count: undefined },
         {
@@ -523,75 +528,85 @@
             </ul>
         </nav>
 
-        <div class="flex flex-col gap-2 rounded-theme border border-line bg-surface p-3">
-            {#if isOwner}
-                <ul class="flex flex-col gap-1 text-sm text-primary">
-                    <li>
-                        <a href="/settings" class="underline underline-offset-2">editar perfil</a>
-                    </li>
-                    <li>
-                        <a href="/friends/requests" class="underline underline-offset-2">
-                            pedidos de amizade
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/testimonials" class="underline underline-offset-2">
-                            moderar depoimentos
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/settings/blocks" class="underline underline-offset-2">
-                            perfis bloqueados
-                        </a>
-                    </li>
-                </ul>
-            {:else}
-                <ul class="flex flex-col gap-1 text-sm text-primary">
-                    {#if profile.can_write_scrap}
+        {#if showAsideActions}
+            <div class="flex flex-col gap-2 rounded-theme border border-line bg-surface p-3">
+                {#if isOwner}
+                    <ul class="flex flex-col gap-1 text-sm text-primary">
                         <li>
-                            <a href="/@{profile.slug}/scraps" class="underline underline-offset-2">
-                                deixar recado
+                            <a href="/settings" class="underline underline-offset-2"
+                                >editar perfil</a
+                            >
+                        </li>
+                        <li>
+                            <a href="/friends/requests" class="underline underline-offset-2">
+                                pedidos de amizade
                             </a>
                         </li>
-                    {/if}
-                    {#if relationship !== "anonymous"}
                         <li>
-                            <a href="/messages/{profile.slug}" class="underline underline-offset-2">
-                                enviar mensagem
+                            <a href="/testimonials" class="underline underline-offset-2">
+                                moderar depoimentos
                             </a>
                         </li>
-                    {/if}
-                    {#if relationship !== "anonymous"}
                         <li>
-                            {#if reported}
-                                <span class="text-muted">perfil já denunciado</span>
-                            {:else}
+                            <a href="/settings/blocks" class="underline underline-offset-2">
+                                perfis bloqueados
+                            </a>
+                        </li>
+                    </ul>
+                {:else}
+                    <ul class="flex flex-col gap-1 text-sm text-primary">
+                        {#if profile.can_write_scrap}
+                            <li>
+                                <a
+                                    href="/@{profile.slug}/scraps"
+                                    class="underline underline-offset-2"
+                                >
+                                    deixar recado
+                                </a>
+                            </li>
+                        {/if}
+                        {#if relationship !== "anonymous"}
+                            <li>
+                                <a
+                                    href="/messages/{profile.slug}"
+                                    class="underline underline-offset-2"
+                                >
+                                    enviar mensagem
+                                </a>
+                            </li>
+                        {/if}
+                        {#if relationship !== "anonymous"}
+                            <li>
+                                {#if reported}
+                                    <span class="text-muted">perfil já denunciado</span>
+                                {:else}
+                                    <button
+                                        type="button"
+                                        class="cursor-pointer underline underline-offset-2"
+                                        disabled={busy}
+                                        onclick={openReport}
+                                    >
+                                        denunciar perfil
+                                    </button>
+                                {/if}
+                            </li>
+                        {/if}
+                        {#if relationship !== "anonymous"}
+                            <li>
                                 <button
                                     type="button"
                                     class="cursor-pointer underline underline-offset-2"
                                     disabled={busy}
-                                    onclick={openReport}
+                                    onclick={() => (confirming = "block")}
                                 >
-                                    denunciar perfil
+                                    bloquear perfil
                                 </button>
-                            {/if}
-                        </li>
-                    {/if}
-                    {#if relationship !== "anonymous"}
-                        <li>
-                            <button
-                                type="button"
-                                class="cursor-pointer underline underline-offset-2"
-                                disabled={busy}
-                                onclick={() => (confirming = "block")}
-                            >
-                                bloquear perfil
-                            </button>
-                        </li>
-                    {/if}
-                </ul>
-            {/if}
-        </div>
+                            </li>
+                        {/if}
+                    </ul>
+                {/if}
+            </div>
+        {/if}
     </aside>
 
     <section class="flex flex-col gap-3">
@@ -846,14 +861,14 @@
                 {#if profile.friends.length === 0}
                     <p class="text-sm text-muted">Ninguém por aqui ainda.</p>
                 {:else}
-                    <ul class="grid grid-cols-3 gap-2">
+                    <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-3">
                         {#each profile.friends as friend (friend.id)}
                             <li>
                                 <a href="/@{friend.slug}" class="block text-center">
                                     <Avatar
                                         src={friend.avatar_url}
                                         name={friend.name}
-                                        class="aspect-square w-full"
+                                        class="mx-auto aspect-square w-full max-w-24"
                                     />
                                     <span class="mt-1 block truncate text-xs text-content">
                                         {friend.name}
@@ -884,14 +899,14 @@
             {#if data.communities.length === 0}
                 <p class="text-sm text-muted">Nenhuma comunidade ainda.</p>
             {:else}
-                <ul class="grid grid-cols-3 gap-2">
+                <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-3">
                     {#each data.communities as community (community.id)}
                         <li>
                             <a href="/community/{community.slug}" class="block text-center">
                                 <Avatar
                                     src={community.avatar_url}
                                     name={community.name}
-                                    class="aspect-square w-full"
+                                    class="mx-auto aspect-square w-full max-w-24"
                                 />
                                 <span class="mt-1 block truncate text-xs text-content">
                                     {community.name}
