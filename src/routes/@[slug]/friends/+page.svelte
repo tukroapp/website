@@ -24,7 +24,13 @@
         const requested = query.trim();
         loading = true;
         try {
-            const page = await fetchProfileFriends(profile.slug, requested);
+            const page = await fetchProfileFriends(
+                profile.slug,
+                requested,
+                null,
+                undefined,
+                data.mutual,
+            );
             searchedTerm = requested;
             friends = page.results;
             nextCursor = page.next_cursor;
@@ -43,7 +49,13 @@
     async function loadMore() {
         loading = true;
         try {
-            const page = await fetchProfileFriends(profile.slug, searchedTerm, nextCursor);
+            const page = await fetchProfileFriends(
+                profile.slug,
+                searchedTerm,
+                nextCursor,
+                undefined,
+                data.mutual,
+            );
             friends = [...friends, ...page.results];
             nextCursor = page.next_cursor;
         } catch (error) {
@@ -59,8 +71,12 @@
 <main class="mx-auto flex w-full max-w-7xl flex-col gap-3 p-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
         <h1 class="text-lg font-bold text-content">
-            Amigos de {profile.name}
-            {#if profile.friends_count !== null}({profile.friends_count}){/if}
+            {#if data.mutual}
+                Amigos em comum com {profile.name}
+            {:else}
+                Amigos de {profile.name}
+                {#if profile.friends_count !== null}({profile.friends_count}){/if}
+            {/if}
         </h1>
         <a href="/@{profile.slug}" class="text-sm text-primary underline underline-offset-2">
             voltar ao perfil
@@ -84,6 +100,8 @@
                     Carregando...
                 {:else if searchedTerm}
                     Nenhum amigo encontrado para "{searchedTerm}".
+                {:else if data.mutual}
+                    Vocês não têm amigos em comum.
                 {:else}
                     Ninguém por aqui ainda.
                 {/if}

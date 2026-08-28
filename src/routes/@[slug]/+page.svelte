@@ -123,6 +123,11 @@
         isOwner || profile.can_write_scrap || relationship !== "anonymous",
     );
 
+    // A vitrine de amigos: o destaque escolhido pelo dono, ou a amostra de sempre.
+    const hasTopFriends = $derived(profile.top_friends.length > 0);
+    const shownFriends = $derived(hasTopFriends ? profile.top_friends : profile.friends);
+    const mutualCount = $derived(profile.mutual_friends_count ?? 0);
+
     const sections = $derived([
         { label: "perfil", icon: "profile" as const, href: `/@${profile.slug}`, count: undefined },
         {
@@ -512,6 +517,11 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/friends/top" class="underline underline-offset-2">
+                                amigos em destaque
+                            </a>
+                        </li>
+                        <li>
                             <a href="/settings/blocks" class="underline underline-offset-2">
                                 perfis bloqueados
                             </a>
@@ -813,21 +823,42 @@
             <div class="flex flex-col gap-2 rounded-theme border border-line bg-surface p-3">
                 <div class="flex items-center justify-between border-b border-line pb-1">
                     <h2 class="text-sm font-bold text-content">
-                        amigos ({profile.friends_count ?? 0})
+                        {hasTopFriends ? "amigos em destaque" : "amigos"} ({profile.friends_count ??
+                            0})
                     </h2>
-                    <a
-                        href="/@{profile.slug}/friends"
-                        class="text-xs text-primary underline underline-offset-2"
-                    >
-                        ver todos
-                    </a>
+                    <div class="flex items-center gap-2 text-xs">
+                        {#if isOwner}
+                            <a
+                                href="/friends/top"
+                                class="text-primary underline underline-offset-2"
+                            >
+                                editar destaque
+                            </a>
+                        {/if}
+                        <a
+                            href="/@{profile.slug}/friends"
+                            class="text-primary underline underline-offset-2"
+                        >
+                            ver todos
+                        </a>
+                    </div>
                 </div>
 
-                {#if profile.friends.length === 0}
+                {#if mutualCount > 0}
+                    <a
+                        href="/@{profile.slug}/friends?mutual=true"
+                        class="text-xs text-primary underline underline-offset-2"
+                    >
+                        {mutualCount}
+                        {mutualCount === 1 ? "amigo em comum" : "amigos em comum"}
+                    </a>
+                {/if}
+
+                {#if shownFriends.length === 0}
                     <p class="text-sm text-muted">Ninguém por aqui ainda.</p>
                 {:else}
                     <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-3">
-                        {#each profile.friends as friend (friend.id)}
+                        {#each shownFriends as friend (friend.id)}
                             <li>
                                 <a href="/@{friend.slug}" class="block text-center">
                                     <Avatar

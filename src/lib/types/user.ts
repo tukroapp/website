@@ -122,6 +122,12 @@ export interface ProfileResponse {
     /** Null quando a lista de amigos é privada, nunca mostre como zero. */
     friends_count: number | null;
     friends: ProfileSummary[];
+    /** Amigos que o dono destacou, na ordem que ele escolheu, no máximo 9. `[]` sem destaque ou lista privada. */
+    top_friends: ProfileSummary[];
+    /** Amigos em comum com quem está olhando. Null para anônimo, para o próprio perfil e para lista privada. */
+    mutual_friends_count: number | null;
+    /** Amostra de até 9 amigos em comum. A lista completa vem de /profile/{slug}/friend?mutual=true. */
+    mutual_friends: ProfileSummary[];
     scraps_visible: boolean;
     /** Null quando o mural é privado, nunca mostre como zero. Respostas não contam. */
     scraps_count: number | null;

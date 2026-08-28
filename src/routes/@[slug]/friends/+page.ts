@@ -5,7 +5,9 @@ import { fetchProfile } from "#lib/profile";
 import type { ProfileSummary } from "#lib/types";
 import type { PageLoadEvent } from "./$types";
 
-export async function load({ params, fetch }: PageLoadEvent) {
+export async function load({ params, url, fetch }: PageLoadEvent) {
+    const mutual = url.searchParams.get("mutual") === "true";
+
     let profile;
     try {
         profile = await fetchProfile(params.slug, fetch);
@@ -17,13 +19,20 @@ export async function load({ params, fetch }: PageLoadEvent) {
     }
 
     try {
-        const page = await fetchProfileFriends(params.slug, null, null, undefined, fetch);
-        return { profile, friends: page.results, nextCursor: page.next_cursor, isPrivate: false };
+        const page = await fetchProfileFriends(params.slug, null, null, undefined, mutual, fetch);
+        return {
+            profile,
+            mutual,
+            friends: page.results,
+            nextCursor: page.next_cursor,
+            isPrivate: false,
+        };
     } catch (err) {
         // O único 403 nesta rota é o dono mantendo a lista de amigos privada.
         if (err instanceof ApiError && err.status === 403) {
             return {
                 profile,
+                mutual,
                 friends: [] as ProfileSummary[],
                 nextCursor: null as string | null,
                 isPrivate: true,

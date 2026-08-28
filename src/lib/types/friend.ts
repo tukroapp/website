@@ -15,3 +15,7 @@ export interface FriendRequestResult {
     id: string;
     status: "pending" | "accepted";
 }
+
+export interface TopFriendsResult {
+    count: number;
+}

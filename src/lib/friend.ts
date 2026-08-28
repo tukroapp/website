@@ -6,23 +6,47 @@ import type {
     FriendRequestItem,
     FriendRequestResult,
     ProfileSummary,
+    TopFriendsResult,
 } from "./types";
 
 const FRIEND_PAGE_SIZE = 20;
 
-/** `q` filtra os amigos daquele perfil por nome ou slug. */
+/** A grade 3x3 do perfil antigo. O backend recusa mais que isso. */
+export const TOP_FRIENDS_MAX = 9;
+
+/**
+ * `q` filtra os amigos daquele perfil por nome ou slug. `mutual` restringe a
+ * quem também é amigo de quem está olhando (ignorado para anônimo e no próprio
+ * perfil).
+ */
 export function fetchProfileFriends(
     slug: string,
     q: string | null = null,
     cursor: string | null = null,
     limit: number = FRIEND_PAGE_SIZE,
+    mutual: boolean = false,
     fetchFn: typeof fetch = fetch,
 ): Promise<ApiCursorPaginatedResponse<ProfileSummary>> {
     return apiFetch.get<ApiCursorPaginatedResponse<ProfileSummary>>(
         `/api/v1/profile/${encodeURIComponent(slug)}/friend`,
-        { query: { q: q || null, limit, cursor } },
+        { query: { q: q || null, limit, cursor, mutual: mutual || null } },
         fetchFn,
     );
+}
+
+/**
+ * Substitui a seleção inteira de amigos em destaque. A ordem do array é a ordem
+ * de exibição. `[]` limpa tudo. `400` em `slugs` quando algum não é amigo
+ * (`not_a_friend`, com `params.slug`), quando há repetição (`duplicated`), ou
+ * quando passa de 9.
+ */
+export function setTopFriends(
+    slugs: string[],
+    fetchFn: typeof fetch = fetch,
+): Promise<TopFriendsResult> {
+    return apiFetch
+        .put<ApiResponse<TopFriendsResult>>("/api/v1/friend/top", { slugs }, {}, fetchFn)
+        .then((res) => res.results);
 }
 
 export function fetchFriendRequests(
