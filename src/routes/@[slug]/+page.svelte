@@ -27,6 +27,7 @@
     import { auth } from "#lib/state/user.svelte";
     import { formatDate, relativeTime, timeSince } from "#lib/time";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
     import type { MyRating, RatingAxisKey } from "#lib/types";
 
     type Confirmation = "remove_friend" | "block";
@@ -375,7 +376,14 @@
 
 {#snippet relationshipActions()}
     {#if relationship === "none"}
-        <Button size="sm" disabled={busy} onclick={addFriend}>adicionar aos amigos</Button>
+        <Button
+            size="sm"
+            disabled={busy || !auth.canWrite}
+            title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+            onclick={addFriend}
+        >
+            adicionar aos amigos
+        </Button>
     {:else if relationship === "request_sent"}
         <Button size="sm" variant="outline" disabled={busy} onclick={cancelRequest}>
             pedido enviado, cancelar
@@ -446,7 +454,8 @@
                     <Button
                         size="sm"
                         variant={profile.is_fan ? "outline" : "accent"}
-                        disabled={fanBusy}
+                        disabled={fanBusy || (!profile.is_fan && !auth.canWrite)}
+                        title={profile.is_fan || auth.canWrite ? undefined : EMAIL_GATE_HINT}
                         onclick={toggleFan}
                     >
                         {profile.is_fan ? "sou fã" : "tornar-se fã"}
@@ -657,7 +666,8 @@
                     {/if}
                     <Button
                         size="sm"
-                        disabled={savingRating || ratingEmpty || !ratingChanged}
+                        disabled={savingRating || ratingEmpty || !ratingChanged || !auth.canWrite}
+                        title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
                         onclick={saveRating}
                     >
                         {profile.my_rating ? "atualizar avaliação" : "avaliar"}

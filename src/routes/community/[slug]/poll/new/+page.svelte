@@ -14,6 +14,7 @@
     import { loginUrl } from "#lib/redirect";
     import { auth } from "#lib/state/user.svelte";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
 
     let { data } = $props();
 
@@ -186,7 +187,11 @@
             </div>
 
             <div class="flex justify-end">
-                <Button type="submit" disabled={saving || !valid}>
+                <Button
+                    type="submit"
+                    disabled={saving || !valid || !auth.canWrite}
+                    title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+                >
                     {saving ? "criando..." : "criar enquete"}
                 </Button>
             </div>

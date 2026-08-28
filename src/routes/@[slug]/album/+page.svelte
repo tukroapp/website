@@ -18,6 +18,7 @@
         mediaProblem,
         uploadMedia,
     } from "#lib/media";
+    import { auth } from "#lib/state/user.svelte";
     import { toastApiError } from "#lib/toast";
     import type { Media, MediaKind } from "#lib/types";
 
@@ -242,98 +243,105 @@
                     </p>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-3">
-                    <label
-                        for="media"
-                        class="inline-flex h-9 cursor-pointer items-center justify-center rounded-theme border border-line bg-surface px-4 text-sm font-medium text-content hover:bg-surface-hover"
-                    >
-                        {compressing ? "comprimindo..." : "escolher arquivo"}
-                    </label>
-                    <input
-                        id="media"
-                        type="file"
-                        accept="image/*,video/*"
-                        disabled={uploading || compressing}
-                        onchange={pickFile}
-                        class="sr-only"
-                    />
-                    <p class="text-xs text-muted">
-                        JPEG, PNG, WebP, GIF, MP4, MOV ou WebM, até 25 MB.
+                {#if !auth.canWrite}
+                    <p class="text-sm text-muted">
+                        Confirme seu e-mail para enviar fotos e vídeos. Veja a faixa no topo da
+                        página.
                     </p>
-                </div>
+                {:else}
+                    <div class="flex flex-wrap items-center gap-3">
+                        <label
+                            for="media"
+                            class="inline-flex h-9 cursor-pointer items-center justify-center rounded-theme border border-line bg-surface px-4 text-sm font-medium text-content hover:bg-surface-hover"
+                        >
+                            {compressing ? "comprimindo..." : "escolher arquivo"}
+                        </label>
+                        <input
+                            id="media"
+                            type="file"
+                            accept="image/*,video/*"
+                            disabled={uploading || compressing}
+                            onchange={pickFile}
+                            class="sr-only"
+                        />
+                        <p class="text-xs text-muted">
+                            JPEG, PNG, WebP, GIF, MP4, MOV ou WebM, até 25 MB.
+                        </p>
+                    </div>
 
-                {#if file && preview}
-                    <div class="flex flex-wrap items-start gap-3">
-                        {#if selectedKind === "photo"}
-                            <img
-                                src={preview}
-                                alt="Prévia do arquivo escolhido"
-                                class="size-32 border border-line object-cover"
-                            />
-                        {:else}
-                            <!-- svelte-ignore a11y_media_has_caption -->
-                            <video
-                                src={preview}
-                                controls
-                                preload="metadata"
-                                class="size-32 border border-line object-cover"
-                            ></video>
-                        {/if}
-
-                        <div class="flex min-w-0 flex-col gap-1">
-                            <p class="truncate text-sm text-content">{file.name}</p>
-                            <p class="text-xs text-muted">
-                                {selectedKind ? mediaKindLabel(selectedKind) : "arquivo"} · {formatSize(
-                                    file.size,
-                                )}
-                            </p>
-
-                            {#if quotaFull && selectedKind}
-                                <p class="text-xs text-danger">
-                                    Você já tem {MEDIA_LIMITS[selectedKind]}
-                                    {mediaKindLabel(selectedKind, true)}. Apague algum item antes de
-                                    enviar outro.
-                                </p>
+                    {#if file && preview}
+                        <div class="flex flex-wrap items-start gap-3">
+                            {#if selectedKind === "photo"}
+                                <img
+                                    src={preview}
+                                    alt="Prévia do arquivo escolhido"
+                                    class="size-32 border border-line object-cover"
+                                />
+                            {:else}
+                                <!-- svelte-ignore a11y_media_has_caption -->
+                                <video
+                                    src={preview}
+                                    controls
+                                    preload="metadata"
+                                    class="size-32 border border-line object-cover"
+                                ></video>
                             {/if}
 
-                            <div class="flex flex-wrap gap-2">
-                                <Button
-                                    size="sm"
-                                    disabled={uploading || quotaFull}
-                                    onclick={upload}
-                                >
-                                    {uploading ? "enviando..." : "enviar"}
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={uploading}
-                                    onclick={clearFile}
-                                >
-                                    cancelar
-                                </Button>
+                            <div class="flex min-w-0 flex-col gap-1">
+                                <p class="truncate text-sm text-content">{file.name}</p>
+                                <p class="text-xs text-muted">
+                                    {selectedKind ? mediaKindLabel(selectedKind) : "arquivo"} · {formatSize(
+                                        file.size,
+                                    )}
+                                </p>
+
+                                {#if quotaFull && selectedKind}
+                                    <p class="text-xs text-danger">
+                                        Você já tem {MEDIA_LIMITS[selectedKind]}
+                                        {mediaKindLabel(selectedKind, true)}. Apague algum item
+                                        antes de enviar outro.
+                                    </p>
+                                {/if}
+
+                                <div class="flex flex-wrap gap-2">
+                                    <Button
+                                        size="sm"
+                                        disabled={uploading || quotaFull}
+                                        onclick={upload}
+                                    >
+                                        {uploading ? "enviando..." : "enviar"}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={uploading}
+                                        onclick={clearFile}
+                                    >
+                                        cancelar
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {/if}
+                    {/if}
 
-                {#if uploading}
-                    <div
-                        role="progressbar"
-                        aria-valuenow={Math.round(progress * 100)}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        class="h-2 w-full overflow-hidden rounded-theme border border-line bg-canvas"
-                    >
+                    {#if uploading}
                         <div
-                            class="h-full bg-primary transition-[width]"
-                            style="width: {Math.round(progress * 100)}%"
-                        ></div>
-                    </div>
-                {/if}
+                            role="progressbar"
+                            aria-valuenow={Math.round(progress * 100)}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            class="h-2 w-full overflow-hidden rounded-theme border border-line bg-canvas"
+                        >
+                            <div
+                                class="h-full bg-primary transition-[width]"
+                                style="width: {Math.round(progress * 100)}%"
+                            ></div>
+                        </div>
+                    {/if}
 
-                {#if uploadError}
-                    <p class="text-xs text-danger">{uploadError}</p>
+                    {#if uploadError}
+                        <p class="text-xs text-danger">{uploadError}</p>
+                    {/if}
                 {/if}
             </section>
         {/if}

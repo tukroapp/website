@@ -3,6 +3,7 @@
     import { page } from "$app/state";
     import { toast } from "svelte-sonner";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
     import { isBlankBbcode } from "#lib/bbcode";
     import Button from "#lib/components/Button.svelte";
     import FieldError from "#lib/components/FieldError.svelte";
@@ -105,7 +106,11 @@
                 <Button
                     type="submit"
                     size="sm"
-                    disabled={saving || form.title.trim() === "" || isBlankBbcode(form.body)}
+                    disabled={saving ||
+                        form.title.trim() === "" ||
+                        isBlankBbcode(form.body) ||
+                        !auth.canWrite}
+                    title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
                 >
                     {saving ? "publicando..." : "publicar tópico"}
                 </Button>

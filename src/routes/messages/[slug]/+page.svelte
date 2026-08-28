@@ -20,6 +20,7 @@
     import { auth } from "#lib/state/user.svelte";
     import { formatDateTime } from "#lib/time";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
     import type { MessageResponse } from "#lib/types";
 
     let { data } = $props();
@@ -253,7 +254,11 @@
             />
             <Button
                 size="sm"
-                disabled={sending || blockedReason !== null || isBlankBbcode(body)}
+                disabled={sending ||
+                    blockedReason !== null ||
+                    isBlankBbcode(body) ||
+                    !auth.canWrite}
+                title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
                 onclick={send}
             >
                 {sending ? "enviando..." : "enviar"}

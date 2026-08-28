@@ -33,6 +33,7 @@
     } from "#lib/topic";
     import { formatDateTime } from "#lib/time";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
     import type { Comment, CommentContext, CommentNode } from "#lib/types";
 
     let { data } = $props();
@@ -555,7 +556,8 @@
                         <div class="flex gap-2">
                             <Button
                                 size="sm"
-                                disabled={busy || isBlankBbcode(replyBody)}
+                                disabled={busy || isBlankBbcode(replyBody) || !auth.canWrite}
+                                title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
                                 onclick={() => submitReply(comment)}
                             >
                                 responder
@@ -751,7 +753,12 @@
                 placeholder="Escreva um comentário"
             />
             <div class="flex flex-wrap items-center justify-between gap-2">
-                <Button type="submit" size="sm" disabled={busy || isBlankBbcode(body)}>
+                <Button
+                    type="submit"
+                    size="sm"
+                    disabled={busy || isBlankBbcode(body) || !auth.canWrite}
+                    title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+                >
                     comentar
                 </Button>
                 <span class="text-xs text-muted">

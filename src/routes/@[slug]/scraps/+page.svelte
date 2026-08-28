@@ -23,6 +23,7 @@
     import { auth } from "#lib/state/user.svelte";
     import { formatDateTime } from "#lib/time";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
     import type { Scrap } from "#lib/types";
 
     interface Thread {
@@ -296,7 +297,12 @@
                 />
 
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <Button size="sm" type="submit" disabled={busy || isBlankBbcode(body)}>
+                    <Button
+                        size="sm"
+                        type="submit"
+                        disabled={busy || isBlankBbcode(body) || !auth.canWrite}
+                        title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+                    >
                         enviar recado
                     </Button>
                     <span class="text-xs text-muted">{remaining} caracteres restantes</span>
@@ -458,7 +464,9 @@
                                             <Button
                                                 size="sm"
                                                 disabled={busy ||
-                                                    isBlankBbcode(threads[scrap.id].body)}
+                                                    isBlankBbcode(threads[scrap.id].body) ||
+                                                    !auth.canWrite}
+                                                title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
                                                 onclick={() => submitReply(scrap)}
                                             >
                                                 responder

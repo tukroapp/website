@@ -22,6 +22,14 @@ class AuthState {
         return this.user !== null;
     }
 
+    /**
+     * E-mail confirmado libera as ações de escrita (recado, depoimento, mensagem,
+     * comunidade, foto, amizade, fã, avaliação). Conta Google já nasce verificada.
+     */
+    get canWrite(): boolean {
+        return this.user?.is_email_verified ?? false;
+    }
+
     async login(credentials: LoginCredentials, fetchFn: typeof fetch = fetch): Promise<MeResponse> {
         const res = await apiFetch.post<ApiResponse<LoginResponse>>(
             "/api/v1/auth/login",

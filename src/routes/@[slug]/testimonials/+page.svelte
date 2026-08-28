@@ -20,6 +20,7 @@
     } from "#lib/testimonial";
     import { formatDateTime } from "#lib/time";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
     import type { Testimonial } from "#lib/types";
 
     let { data } = $props();
@@ -150,7 +151,12 @@
 
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="flex gap-2">
-                        <Button size="sm" type="submit" disabled={busy || isBlankBbcode(body)}>
+                        <Button
+                            size="sm"
+                            type="submit"
+                            disabled={busy || isBlankBbcode(body) || !auth.canWrite}
+                            title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+                        >
                             enviar depoimento
                         </Button>
                         <Button
@@ -167,7 +173,14 @@
             </form>
         {:else}
             <div>
-                <Button size="sm" onclick={() => (writing = true)}>escrever depoimento</Button>
+                <Button
+                    size="sm"
+                    disabled={!auth.canWrite}
+                    title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+                    onclick={() => (writing = true)}
+                >
+                    escrever depoimento
+                </Button>
             </div>
         {/if}
     {/if}

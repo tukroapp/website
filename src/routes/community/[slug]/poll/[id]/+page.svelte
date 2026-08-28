@@ -26,6 +26,7 @@
     import { auth } from "#lib/state/user.svelte";
     import { formatDateTime } from "#lib/time";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
 
     let { data } = $props();
 
@@ -392,7 +393,14 @@
                         {/each}
                     </fieldset>
                     <div class="flex flex-wrap items-center gap-2">
-                        <Button type="submit" size="sm" disabled={busy || !voteReady}>votar</Button>
+                        <Button
+                            type="submit"
+                            size="sm"
+                            disabled={busy || !voteReady || !auth.canWrite}
+                            title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+                        >
+                            votar
+                        </Button>
                         <span class="text-xs text-muted">
                             {choiceCountHint(poll.min_choices, poll.max_choices)}
                         </span>

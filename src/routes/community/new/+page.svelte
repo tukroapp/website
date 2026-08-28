@@ -1,7 +1,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
+    import { auth } from "#lib/state/user.svelte";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import FieldError from "#lib/components/FieldError.svelte";
@@ -185,7 +187,11 @@
         </label>
 
         <div class="flex justify-end">
-            <Button type="submit" disabled={saving || form.name.trim() === ""}>
+            <Button
+                type="submit"
+                disabled={saving || form.name.trim() === "" || !auth.canWrite}
+                title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+            >
                 criar comunidade
             </Button>
         </div>

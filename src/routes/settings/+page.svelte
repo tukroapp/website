@@ -1,14 +1,10 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
-    import { ApiError, toApiError } from "#lib/error";
+    import { toApiError } from "#lib/error";
     import { compressImage } from "#lib/image";
     import { toastApiError } from "#lib/toast";
-    import {
-        deactivateAccount,
-        scheduleAccountDeletion,
-        sendVerificationEmail,
-    } from "#lib/account";
+    import { deactivateAccount, scheduleAccountDeletion } from "#lib/account";
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
@@ -19,8 +15,10 @@
     import Textarea from "#lib/components/Textarea.svelte";
     import ThemeSwitcher from "#lib/components/ThemeSwitcher.svelte";
     import { LANGUAGES_MAX_ITEMS, LIST_MAX_ITEMS, RELATIONSHIP_STATUS_OPTIONS } from "#lib/profile";
+    import { emailResend } from "#lib/state/emailResend.svelte";
     import { auth } from "#lib/state/user.svelte";
     import { formatDate } from "#lib/time";
+    import { resendVerificationEmail } from "#lib/verification";
     import type { MeResponse, PrivacySettings, RelationshipStatus, Visibility } from "#lib/types";
 
     type ProfileTab = "social" | "professional" | "personal";
@@ -264,22 +262,16 @@
         }
     }
 
+    // A contagem regressiva do botão de reenviar só precisa andar se o e-mail não foi confirmado.
+    $effect(() => {
+        if (auth.user && !auth.user.is_email_verified) return emailResend.watch();
+    });
+
     async function resendVerification() {
+        if (sendingEmail || emailResend.secondsLeft > 0) return;
         sendingEmail = true;
         try {
-            await sendVerificationEmail();
-            toast.success("E-mail enviado, confira sua caixa de entrada");
-        } catch (error) {
-            if (error instanceof ApiError && error.status === 429) {
-                toast.error("Aguarde alguns instantes antes de pedir outro e-mail");
-            } else if (
-                error instanceof ApiError &&
-                error.errorsAt("email").at(0)?.code === "already_verified"
-            ) {
-                await auth.fetchUser();
-            } else {
-                toastApiError(error);
-            }
+            await resendVerificationEmail();
         } finally {
             sendingEmail = false;
         }
@@ -756,8 +748,14 @@
                     alguns segundos para chegar.
                 </p>
                 <div class="flex justify-end">
-                    <Button variant="outline" disabled={sendingEmail} onclick={resendVerification}>
-                        reenviar e-mail de verificação
+                    <Button
+                        variant="outline"
+                        disabled={sendingEmail || emailResend.secondsLeft > 0}
+                        onclick={resendVerification}
+                    >
+                        {emailResend.secondsLeft > 0
+                            ? `reenviar em ${emailResend.secondsLeft}s`
+                            : "reenviar e-mail de verificação"}
                     </Button>
                 </div>
             {/if}
