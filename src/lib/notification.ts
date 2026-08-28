@@ -1,4 +1,5 @@
 import { apiFetch } from "./api";
+import { auth } from "./state/user.svelte";
 import type {
     ApiCursorPaginatedResponse,
     ApiResponse,
@@ -59,10 +60,17 @@ const MESSAGES: Record<NotificationKind, string> = {
     community_join_accepted: "aprovou seu pedido para entrar na comunidade",
     topic_comment: "comentou no seu tópico do fórum",
     topic_reply: "respondeu seu comentário no fórum",
+    // Agregada: uma só notificação enquanto não lida, então fala no plural e não nomeia ninguém.
+    new_fan: "Você tem novos fãs",
 };
 
 export function notificationMessage(notification: Notification): string {
     return MESSAGES[notification.kind];
+}
+
+/** `new_fan` é agregada e não deve mostrar o nome de quem virou fã: entre criar e ler entrou gente. */
+export function notificationShowsActor(kind: NotificationKind): boolean {
+    return kind !== "new_fan";
 }
 
 /** Para onde o item leva. O slug vem resolvido do backend, nunca é deduzido aqui. */
@@ -87,6 +95,9 @@ export function notificationHref(notification: Notification): string {
             return community;
         case "friend_request":
             return "/friends/requests";
+        case "new_fan":
+            // Vai para a sua lista de fãs, não para o perfil de quem virou fã.
+            return auth.user ? `/@${auth.user.slug}/fans` : "/";
         case "testimonial_received":
             return "/testimonials";
         case "scrap_received":

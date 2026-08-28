@@ -69,6 +69,24 @@
             adicionou <a href={albumHref} class={LINK}>{mediaLabel()}</a>
         {:else if item.kind === "status_changed"}
             atualizou o recado
+        {:else if item.kind === "topic_created"}
+            abriu o tópico
+            {#if item.community && item.topic_id}
+                <a href="/community/{item.community.slug}/topic/{item.topic_id}" class={LINK}>
+                    {item.text}
+                </a>
+                em
+                <a href="/community/{item.community.slug}" class={LINK}>{item.community.name}</a>
+            {/if}
+        {:else if item.kind === "poll_created"}
+            criou a enquete
+            {#if item.community && item.poll_id}
+                <a href="/community/{item.community.slug}/poll/{item.poll_id}" class={LINK}>
+                    {item.text}
+                </a>
+                em
+                <a href="/community/{item.community.slug}" class={LINK}>{item.community.name}</a>
+            {/if}
         {/if}
     </p>
 

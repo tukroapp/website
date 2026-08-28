@@ -6,6 +6,7 @@
     import type { IconName } from "#lib/components/Icon.svelte";
     import NotificationsMenu from "#lib/components/NotificationsMenu.svelte";
     import TabPill from "#lib/components/TabPill.svelte";
+    import { unreadBadge } from "#lib/format";
     import { auth } from "#lib/state/user.svelte";
 
     let open = $state(false);
@@ -51,7 +52,7 @@
             <Icon name={icon} class={iconClass} />
             {label}
             {#if href === "/messages" && unreadMessages > 0}
-                <span>({unreadMessages})</span>
+                <span>({unreadBadge(unreadMessages)})</span>
             {:else if href === "/" && feedUnseen > 0}
                 <span class="inline-block size-1.5 rounded-full bg-accent align-middle"></span>
             {/if}
@@ -110,7 +111,9 @@
                     <span class="flex items-center gap-1.5">
                         <Icon name="notifications" class="size-4 shrink-0" />
                         Notificações
-                        {#if unreadNotifications > 0}<span>({unreadNotifications})</span>{/if}
+                        {#if unreadNotifications > 0}<span
+                                >({unreadBadge(unreadNotifications)})</span
+                            >{/if}
                     </span>
                 </TabPill>
 

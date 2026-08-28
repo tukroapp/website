@@ -10,7 +10,8 @@ export type NotificationKind =
     | "community_join_request"
     | "community_join_accepted"
     | "topic_comment"
-    | "topic_reply";
+    | "topic_reply"
+    | "new_fan";
 
 export interface Notification {
     id: string;

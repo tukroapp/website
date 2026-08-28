@@ -2,6 +2,7 @@
     import { goto } from "$app/navigation";
     import Avatar from "#lib/components/Avatar.svelte";
     import NotificationRow from "#lib/components/NotificationRow.svelte";
+    import { unreadBadge } from "#lib/format";
     import {
         NOTIFICATION_DROPDOWN_SIZE,
         fetchNotifications,
@@ -95,7 +96,7 @@
         <span class="max-w-40 truncate">{user?.name}</span>
         {#if unread > 0}
             <span class="rounded-theme bg-accent px-1.5 py-0.5 text-xs text-on-accent">
-                {unread}
+                {unreadBadge(unread)}
             </span>
         {/if}
     </button>

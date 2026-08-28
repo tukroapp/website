@@ -437,13 +437,16 @@
             {#if profile.city}
                 <p class="text-xs text-muted">{profile.city}</p>
             {/if}
-            <a
-                href="/@{profile.slug}/fans"
-                class="mt-0.5 block text-xs text-primary underline underline-offset-2"
-            >
-                {profile.fans_count}
-                {profile.fans_count === 1 ? "fã" : "fãs"}
-            </a>
+            <p class="mt-0.5 text-xs">
+                <a href="/@{profile.slug}/fans" class="text-primary underline underline-offset-2">
+                    {profile.fans_count}
+                    {profile.fans_count === 1 ? "fã" : "fãs"}
+                </a>
+                ·
+                <a href="/@{profile.slug}/idol" class="text-primary underline underline-offset-2">
+                    é fã de {profile.idols_count}
+                </a>
+            </p>
 
             <div class="mt-3 flex flex-col items-stretch gap-2">
                 {#if isOwner}

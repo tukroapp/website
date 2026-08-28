@@ -6,6 +6,7 @@
     import NotificationRow from "#lib/components/NotificationRow.svelte";
     import TabPill from "#lib/components/TabPill.svelte";
     import { ApiError } from "#lib/error";
+    import { unreadBadge } from "#lib/format";
     import {
         deleteNotification,
         fetchNotifications,
@@ -108,7 +109,7 @@
     <div class="flex flex-wrap items-center justify-between gap-2">
         <h1 class="text-lg font-bold text-content">
             Notificações
-            {#if unread > 0}({unread} não lidas){/if}
+            {#if unread > 0}({unreadBadge(unread)} não lidas){/if}
         </h1>
         <button
             type="button"

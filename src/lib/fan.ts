@@ -38,3 +38,17 @@ export function fetchFans(
         fetchFn,
     );
 }
+
+/** De quem esse perfil é fã (ídolos): o outro lado de `fetchFans`. Mesmas regras. */
+export function fetchIdols(
+    slug: string,
+    cursor: string | null = null,
+    limit: number = FAN_PAGE_SIZE,
+    fetchFn: typeof fetch = fetch,
+): Promise<ApiCursorPaginatedResponse<ProfileSummary>> {
+    return apiFetch.get<ApiCursorPaginatedResponse<ProfileSummary>>(
+        `/api/v1/profile/${encodeURIComponent(slug)}/idol`,
+        { query: { limit, cursor } },
+        fetchFn,
+    );
+}

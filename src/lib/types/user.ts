@@ -144,6 +144,8 @@ export interface ProfileResponse {
     my_rating: MyRating | null;
     /** Total de fãs, sempre presente. */
     fans_count: number;
+    /** De quantos perfis este é fã (ídolos). */
+    idols_count: number;
     /** Quem está olhando já é fã deste perfil. */
     is_fan: boolean;
     /** Falso para anônimo e para o próprio perfil: sem botão de fã nesses casos. */

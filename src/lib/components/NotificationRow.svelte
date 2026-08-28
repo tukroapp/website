@@ -1,6 +1,6 @@
 <script lang="ts">
     import Avatar from "#lib/components/Avatar.svelte";
-    import { notificationMessage } from "#lib/notification";
+    import { notificationMessage, notificationShowsActor } from "#lib/notification";
     import { relativeTime } from "#lib/time";
     import type { Notification } from "#lib/types";
 
@@ -9,6 +9,8 @@
     }
 
     let { notification }: Props = $props();
+
+    const showActor = $derived(notificationShowsActor(notification.kind));
 </script>
 
 <Avatar
@@ -20,7 +22,9 @@
 
 <span class="min-w-0 flex-1">
     <span class="block text-sm text-content">
-        <span class="font-bold">{notification.actor?.name}</span>
+        {#if showActor}
+            <span class="font-bold">{notification.actor?.name}</span>
+        {/if}
         {notificationMessage(notification)}
     </span>
     <span class="block text-xs text-muted">{relativeTime(notification.created_at)}</span>

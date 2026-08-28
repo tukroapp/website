@@ -7,7 +7,9 @@ export type FeedKind =
     | "became_fan"
     | "friendship_made"
     | "media_added"
-    | "status_changed";
+    | "status_changed"
+    | "topic_created"
+    | "poll_created";
 
 export interface FeedCommunity {
     slug: string;
@@ -30,8 +32,12 @@ export interface FeedItem {
     target_user: ProfileSummary | null;
     community: FeedCommunity | null;
     media: FeedMedia | null;
-    /** O novo recado, só no `status_changed`. */
+    /** O novo recado no `status_changed`, o título no `topic_created`, a pergunta no `poll_created`. */
     text: string | null;
+    /** Só no `topic_created`. */
+    topic_id: string | null;
+    /** Só no `poll_created`. */
+    poll_id: string | null;
 }
 
 /** Linhas consecutivas do mesmo ator colapsadas: várias fotos, várias comunidades, recados repetidos. */
