@@ -127,6 +127,7 @@
     const hasTopFriends = $derived(profile.top_friends.length > 0);
     const shownFriends = $derived(hasTopFriends ? profile.top_friends : profile.friends);
     const mutualCount = $derived(profile.mutual_friends_count ?? 0);
+    const mutualCommunitiesCount = $derived(profile.mutual_communities_count ?? 0);
 
     const sections = $derived([
         { label: "perfil", icon: "profile" as const, href: `/@${profile.slug}`, count: undefined },
@@ -882,15 +883,23 @@
                 <h2 class="text-sm font-bold text-content">
                     comunidades ({data.communities.length})
                 </h2>
-                {#if isOwner}
-                    <a
-                        href="/community/mine"
-                        class="text-xs text-primary underline underline-offset-2"
-                    >
-                        ver todas
-                    </a>
-                {/if}
+                <a
+                    href={isOwner ? "/community/mine" : `/@${profile.slug}/community`}
+                    class="text-xs text-primary underline underline-offset-2"
+                >
+                    ver todas
+                </a>
             </div>
+
+            {#if mutualCommunitiesCount > 0}
+                <a
+                    href="/@{profile.slug}/community?mutual=true"
+                    class="text-xs text-primary underline underline-offset-2"
+                >
+                    {mutualCommunitiesCount}
+                    {mutualCommunitiesCount === 1 ? "comunidade em comum" : "comunidades em comum"}
+                </a>
+            {/if}
 
             {#if data.communities.length === 0}
                 <p class="text-sm text-muted">Nenhuma comunidade ainda.</p>

@@ -8,6 +8,7 @@
     import Textarea from "#lib/components/Textarea.svelte";
     import {
         COMMUNITY_AVATAR_TYPES,
+        COMMUNITY_CATEGORIES,
         COMMUNITY_DESCRIPTION_MAX_LENGTH,
         COMMUNITY_NAME_MAX_LENGTH,
         communityAvatarProblem,
@@ -19,11 +20,17 @@
     import { toApiError } from "#lib/error";
     import { compressImage } from "#lib/image";
     import { toastApiError } from "#lib/toast";
+    import type { CommunityCategory } from "#lib/types";
 
     let { data } = $props();
 
     let community = $derived(data.community);
-    let form = $state({ name: "", description: "", is_private: false });
+    let form = $state({
+        name: "",
+        description: "",
+        is_private: false,
+        category: "outros" as CommunityCategory,
+    });
     let errors = $state<Record<string, string[]>>({});
     let avatarError = $state<string | null>(null);
     let saving = $state(false);
@@ -38,6 +45,7 @@
             name: data.community.name,
             description: data.community.description ?? "",
             is_private: data.community.is_private,
+            category: data.community.category,
         };
         errors = {};
         avatarError = null;
@@ -57,6 +65,7 @@
                 name: form.name.trim(),
                 description: form.description.trim() === "" ? null : form.description.trim(),
                 is_private: form.is_private,
+                category: form.category,
             });
             toast.success("Comunidade atualizada");
         } catch (error) {
@@ -197,6 +206,21 @@
                 O endereço /community/{community.slug} continua o mesmo depois de renomear.
             </p>
             <FieldError messages={errors.name} />
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label for="category" class="text-sm font-medium text-content">Categoria</label>
+            <select
+                id="category"
+                required
+                bind:value={form.category}
+                class="w-full rounded-theme border-line bg-canvas px-3 py-2 text-base text-content focus:border-primary focus:ring-primary sm:text-sm"
+            >
+                {#each COMMUNITY_CATEGORIES as item}
+                    <option value={item.value}>{item.label}</option>
+                {/each}
+            </select>
+            <FieldError messages={errors.category} />
         </div>
 
         <div class="flex flex-col gap-1.5">

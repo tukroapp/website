@@ -128,6 +128,8 @@ export interface ProfileResponse {
     mutual_friends_count: number | null;
     /** Amostra de até 9 amigos em comum. A lista completa vem de /profile/{slug}/friend?mutual=true. */
     mutual_friends: ProfileSummary[];
+    /** Comunidades em comum com quem está olhando. Null nos mesmos casos de mutual_friends_count. */
+    mutual_communities_count: number | null;
     scraps_visible: boolean;
     /** Null quando o mural é privado, nunca mostre como zero. Respostas não contam. */
     scraps_count: number | null;

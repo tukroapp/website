@@ -8,6 +8,7 @@
     import ReportDialog from "#lib/components/ReportDialog.svelte";
     import {
         cancelJoinRequest,
+        communityCategoryLabel,
         communityRoleLabel,
         joinCommunity,
         leaveCommunity,
@@ -171,6 +172,14 @@
 
             <h1 class="mt-2 text-base font-bold text-content">{community.name}</h1>
             <p class="text-xs text-muted italic">{membersLabel(community.members_count)}</p>
+            <p class="text-xs">
+                <a
+                    href="/community?category={community.category}"
+                    class="text-primary underline underline-offset-2"
+                >
+                    {communityCategoryLabel(community.category)}
+                </a>
+            </p>
             {#if community.my_role}
                 <p class="text-xs text-muted">
                     você participa como {communityRoleLabel(community.my_role)}

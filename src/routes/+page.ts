@@ -28,7 +28,7 @@ export async function load({ fetch, url }: PageLoadEvent) {
             fetchTestimonials("received", "pending", null, TESTIMONIAL_PREVIEW, fetch),
             fetchFeed(null, FEED_PAGE, fetch),
             fetchProfileScraps(user.slug, null, SCRAP_PREVIEW, fetch),
-            fetchProfileCommunities(user.slug, null, COMMUNITY_PREVIEW, fetch),
+            fetchProfileCommunities(user.slug, null, COMMUNITY_PREVIEW, false, fetch),
             fetchBirthdays(fetch),
             fetchProfileVisitors(fetch),
         ]);

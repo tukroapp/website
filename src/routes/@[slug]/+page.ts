@@ -25,7 +25,7 @@ async function previewCommunities(
     fetchFn: typeof fetch,
 ): Promise<CommunitySummary[]> {
     try {
-        const page = await fetchProfileCommunities(slug, null, COMMUNITY_PREVIEW, fetchFn);
+        const page = await fetchProfileCommunities(slug, null, COMMUNITY_PREVIEW, false, fetchFn);
         return page.results;
     } catch (err) {
         if (err instanceof ApiError && err.status === 403) return [];

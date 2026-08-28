@@ -12,14 +12,21 @@
     import { compressImage } from "#lib/image";
     import {
         COMMUNITY_AVATAR_TYPES,
+        COMMUNITY_CATEGORIES,
         COMMUNITY_DESCRIPTION_MAX_LENGTH,
         COMMUNITY_NAME_MAX_LENGTH,
         communityAvatarProblem,
         createCommunity,
         uploadCommunityAvatar,
     } from "#lib/community";
+    import type { CommunityCategory } from "#lib/types";
 
-    let form = $state({ name: "", description: "", is_private: false });
+    let form = $state({
+        name: "",
+        description: "",
+        is_private: false,
+        category: "" as CommunityCategory | "",
+    });
     let errors = $state<Record<string, string[]>>({});
     let saving = $state(false);
 
@@ -64,7 +71,7 @@
 
     async function submit(event: SubmitEvent) {
         event.preventDefault();
-        if (form.name.trim() === "") return;
+        if (form.name.trim() === "" || form.category === "") return;
 
         saving = true;
         errors = {};
@@ -73,6 +80,7 @@
                 name: form.name.trim(),
                 description: form.description.trim() === "" ? null : form.description.trim(),
                 is_private: form.is_private,
+                category: form.category,
             });
 
             if (avatarFile) {
@@ -160,6 +168,22 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
+            <label for="category" class="text-sm font-medium text-content">Categoria</label>
+            <select
+                id="category"
+                required
+                bind:value={form.category}
+                class="w-full rounded-theme border-line bg-canvas px-3 py-2 text-base text-content focus:border-primary focus:ring-primary sm:text-sm"
+            >
+                <option value="" disabled>Escolha uma categoria</option>
+                {#each COMMUNITY_CATEGORIES as item}
+                    <option value={item.value}>{item.label}</option>
+                {/each}
+            </select>
+            <FieldError messages={errors.category} />
+        </div>
+
+        <div class="flex flex-col gap-1.5">
             <label for="description" class="text-sm font-medium text-content">Descrição</label>
             <Textarea
                 id="description"
@@ -189,7 +213,10 @@
         <div class="flex justify-end">
             <Button
                 type="submit"
-                disabled={saving || form.name.trim() === "" || !auth.canWrite}
+                disabled={saving ||
+                    form.name.trim() === "" ||
+                    form.category === "" ||
+                    !auth.canWrite}
                 title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
             >
                 criar comunidade
