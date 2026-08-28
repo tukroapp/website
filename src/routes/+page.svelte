@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+    import AuthorLink from "#lib/components/AuthorLink.svelte";
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import Card from "#lib/components/Card.svelte";
@@ -284,22 +285,22 @@
                 <ul class="flex flex-col gap-3">
                     {#each data.scraps as scrap (scrap.id)}
                         <li class="flex gap-3">
-                            <a href="/@{scrap.author.slug}" class="shrink-0">
+                            <AuthorLink slug={scrap.author.slug} class="shrink-0">
                                 <Avatar
                                     src={scrap.author.avatar_url}
                                     name={scrap.author.name}
                                     class="size-10"
                                     textClass="text-sm"
                                 />
-                            </a>
+                            </AuthorLink>
 
                             <div class="min-w-0">
-                                <a
-                                    href="/@{scrap.author.slug}"
+                                <AuthorLink
+                                    slug={scrap.author.slug}
                                     class="text-sm font-bold text-primary underline underline-offset-2"
                                 >
                                     {scrap.author.name}
-                                </a>
+                                </AuthorLink>
                                 <span class="ms-1 text-xs text-muted">
                                     {relativeTime(scrap.created_at)}
                                 </span>

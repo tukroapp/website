@@ -1,5 +1,44 @@
 import { apiFetch } from "./api";
-import type { ForgotPasswordRequest, ResetPasswordRequest, VerifyEmailRequest } from "./types";
+import type {
+    AccountDeletionScheduled,
+    ApiResponse,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    VerifyEmailRequest,
+} from "./types";
+
+/**
+ * Corpo das duas ações de saída. Conta Google não tem senha: manda `{}` e a
+ * sessão já é a prova. Conta com senha errada ou ausente responde `400`
+ * `password.invalid`.
+ */
+function passwordBody(password: string): Record<string, string> {
+    const trimmed = password.trim();
+    return trimmed === "" ? {} : { password: trimmed };
+}
+
+/** Desativa a conta: o perfil some do site e as sessões caem. Reversível ao entrar de novo. */
+export function deactivateAccount(password: string, fetchFn: typeof fetch = fetch): Promise<void> {
+    return apiFetch.delete<void>("/api/v1/me", { body: passwordBody(password) }, fetchFn);
+}
+
+/**
+ * Agenda a exclusão para daqui a 30 dias. Não há endpoint de cancelar: entrar de
+ * novo antes do prazo desfaz o agendamento.
+ */
+export function scheduleAccountDeletion(
+    password: string,
+    fetchFn: typeof fetch = fetch,
+): Promise<AccountDeletionScheduled> {
+    return apiFetch
+        .post<ApiResponse<AccountDeletionScheduled>>(
+            "/api/v1/me/deletion",
+            passwordBody(password),
+            {},
+            fetchFn,
+        )
+        .then((res) => res.results);
+}
 
 export function sendVerificationEmail(fetchFn: typeof fetch = fetch): Promise<void> {
     return apiFetch.post<void>("/api/v1/auth/send-verification-email", undefined, {}, fetchFn);

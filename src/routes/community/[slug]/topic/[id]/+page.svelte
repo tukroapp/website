@@ -3,10 +3,12 @@
     import { goto, refreshAll, replaceState } from "$app/navigation";
     import { page } from "$app/state";
     import { toast } from "svelte-sonner";
+    import AuthorLink from "#lib/components/AuthorLink.svelte";
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import EmptyState from "#lib/components/EmptyState.svelte";
     import LoadMore from "#lib/components/LoadMore.svelte";
+    import ReportDialog from "#lib/components/ReportDialog.svelte";
     import RichText from "#lib/components/RichText.svelte";
     import RichTextarea from "#lib/components/RichTextarea.svelte";
     import { isBlankBbcode, stripBbcode } from "#lib/bbcode";
@@ -65,6 +67,37 @@
     const community = $derived(data.community);
     const isMember = $derived(community.my_role !== null);
     const canInteract = $derived(isMember && !topic.is_locked);
+
+    let reporting = $state(false);
+    let reportKind = $state<"topic" | "comment">("topic");
+    let reportRef = $state("");
+    let reportName = $state("");
+
+    /** Não faz sentido denunciar o próprio conteúdo nem sem estar logado. */
+    const canReportTopic = $derived(!!auth.user && topic.author.id !== auth.user.id);
+
+    function canReportComment(comment: Comment): boolean {
+        return (
+            !!auth.user &&
+            !comment.deleted_at &&
+            !!comment.author &&
+            comment.author.id !== auth.user.id
+        );
+    }
+
+    function openReportTopic() {
+        reportKind = "topic";
+        reportRef = topic.id;
+        reportName = `o tópico "${topic.title}"`;
+        reporting = true;
+    }
+
+    function openReportComment(comment: Comment) {
+        reportKind = "comment";
+        reportRef = comment.id;
+        reportName = comment.author ? `o comentário de ${comment.author.name}` : "este comentário";
+        reporting = true;
+    }
 
     // Depende do tópico de propósito: abrir outro zera formulários e fecha o contexto aberto.
     $effect(() => {
@@ -362,12 +395,12 @@
 {#snippet commentMeta(comment: Comment)}
     <div class="flex flex-wrap items-baseline justify-between gap-2">
         {#if comment.author}
-            <a
-                href="/@{comment.author.slug}"
+            <AuthorLink
+                slug={comment.author.slug}
                 class="text-sm font-bold text-primary underline underline-offset-2"
             >
                 {comment.author.name}
-            </a>
+            </AuthorLink>
         {:else}
             <span class="text-sm font-bold text-muted italic">comentário excluído</span>
         {/if}
@@ -423,14 +456,14 @@
         <p class="text-sm text-muted italic">comentário excluído</p>
     {:else}
         <div class="flex gap-3">
-            <a href="/@{comment.author?.slug}" class="shrink-0">
+            <AuthorLink slug={comment.author?.slug ?? ""} class="shrink-0">
                 <Avatar
                     src={comment.author?.avatar_url ?? null}
                     name={comment.author?.name ?? ""}
                     class="size-9"
                     textClass="text-xs"
                 />
-            </a>
+            </AuthorLink>
 
             <div class="flex min-w-0 flex-1 flex-col gap-1">
                 {@render commentMeta(comment)}
@@ -491,6 +524,15 @@
                                 onclick={() => removeComment(comment)}
                             >
                                 apagar
+                            </button>
+                        {/if}
+                        {#if canReportComment(comment)}
+                            <button
+                                type="button"
+                                class="cursor-pointer underline underline-offset-2"
+                                onclick={() => openReportComment(comment)}
+                            >
+                                denunciar
                             </button>
                         {/if}
                         <button
@@ -600,21 +642,21 @@
             <h1 class="text-xl font-bold break-words text-content">{topic.title}</h1>
 
             <div class="flex items-center gap-3">
-                <a href="/@{topic.author.slug}" class="shrink-0">
+                <AuthorLink slug={topic.author.slug} class="shrink-0">
                     <Avatar
                         src={topic.author.avatar_url}
                         name={topic.author.name}
                         class="size-10"
                         textClass="text-sm"
                     />
-                </a>
+                </AuthorLink>
                 <div class="min-w-0">
-                    <a
-                        href="/@{topic.author.slug}"
+                    <AuthorLink
+                        slug={topic.author.slug}
                         class="text-sm font-bold text-primary underline underline-offset-2"
                     >
                         {topic.author.name}
-                    </a>
+                    </AuthorLink>
                     <p class="text-xs text-muted">
                         {formatDateTime(topic.created_at)}
                         {#if topic.edited_at}(editado){/if}
@@ -661,6 +703,15 @@
                         onclick={() => (confirmingDelete = true)}
                     >
                         excluir
+                    </button>
+                {/if}
+                {#if canReportTopic}
+                    <button
+                        type="button"
+                        class="cursor-pointer underline underline-offset-2"
+                        onclick={openReportTopic}
+                    >
+                        denunciar
                     </button>
                 {/if}
             </div>
@@ -749,6 +800,8 @@
         <LoadMore cursor={nextCursor} {loading} onclick={loadMore} />
     {/if}
 </main>
+
+<ReportDialog bind:open={reporting} kind={reportKind} reference={reportRef} name={reportName} />
 
 {#if contextId !== null}
     <div class="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-3">

@@ -195,3 +195,8 @@ export interface ResetPasswordRequest {
 export interface VerifyEmailRequest {
     token: string;
 }
+
+export interface AccountDeletionScheduled {
+    /** ISO. Até quando dá para desistir entrando de novo. */
+    scheduled_for: string;
+}

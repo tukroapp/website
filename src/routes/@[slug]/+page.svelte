@@ -7,11 +7,11 @@
     import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
     import Icon from "#lib/components/Icon.svelte";
     import RatingIcon from "#lib/components/RatingIcon.svelte";
+    import ReportDialog from "#lib/components/ReportDialog.svelte";
     import RichText from "#lib/components/RichText.svelte";
     import TabPill from "#lib/components/TabPill.svelte";
-    import Textarea from "#lib/components/Textarea.svelte";
     import { blockProfile } from "#lib/block";
-    import { ApiError, NON_FIELD, toApiError } from "#lib/error";
+    import { ApiError, toApiError } from "#lib/error";
     import { becomeFan, stopBeingFan } from "#lib/fan";
     import {
         acceptFriendRequest,
@@ -24,11 +24,10 @@
     import { ageLabel, relationshipStatusLabel } from "#lib/profile";
     import { RATING_AXES, RATING_MAX, deleteRating, rateProfile } from "#lib/rating";
     import { loginUrl } from "#lib/redirect";
-    import { REPORT_DETAILS_MAX_LENGTH, REPORT_REASONS, reportProfile } from "#lib/report";
     import { auth } from "#lib/state/user.svelte";
     import { formatDate, relativeTime, timeSince } from "#lib/time";
     import { toastApiError } from "#lib/toast";
-    import type { MyRating, RatingAxisKey, ReportReason } from "#lib/types";
+    import type { MyRating, RatingAxisKey } from "#lib/types";
 
     type Confirmation = "remove_friend" | "block";
 
@@ -40,11 +39,8 @@
     let busy = $state(false);
     let confirming = $state<Confirmation | null>(null);
     let reporting = $state(false);
-    let reportReason = $state<ReportReason>("spam");
-    let reportDetails = $state("");
     /** Não existe endpoint para perguntar, então isto só lembra do que aconteceu aqui. */
     let reported = $state(false);
-    let retryAfter = $state(0);
 
     let ratingForm = $state<MyRating>({ ...EMPTY_RATING });
     let savingRating = $state(false);
@@ -358,47 +354,6 @@
         }
     }
 
-    function openReport() {
-        reporting = true;
-        reportReason = "spam";
-        reportDetails = "";
-        retryAfter = 0;
-    }
-
-    async function submitReport(event: SubmitEvent) {
-        event.preventDefault();
-        // A regra do backend é só o motivo, mas "outro" sem texto não ajuda ninguém.
-        if (reportReason === "other" && reportDetails.trim() === "") return;
-
-        busy = true;
-        try {
-            const details = reportDetails.trim();
-            await reportProfile(profile.slug, {
-                reason: reportReason,
-                ...(details === "" ? {} : { details }),
-            });
-            reported = true;
-            reporting = false;
-            toast.success("Denúncia enviada");
-        } catch (error) {
-            if (error instanceof ApiError && error.status === 409) {
-                // Já ter denunciado é um estado, não uma falha.
-                reported = true;
-                reporting = false;
-                toast.info("Você já denunciou este perfil");
-            } else if (error instanceof ApiError && error.status === 429) {
-                const seconds = error.errorsAt(NON_FIELD).at(0)?.params?.retry_after_seconds;
-                retryAfter = typeof seconds === "number" ? seconds : 0;
-                if (retryAfter > 0) setTimeout(() => (retryAfter = 0), retryAfter * 1000);
-                toastApiError(error);
-            } else {
-                toastApiError(error);
-            }
-        } finally {
-            busy = false;
-        }
-    }
-
     async function confirmBlock() {
         busy = true;
         try {
@@ -584,7 +539,7 @@
                                         type="button"
                                         class="cursor-pointer underline underline-offset-2"
                                         disabled={busy}
-                                        onclick={openReport}
+                                        onclick={() => (reporting = true)}
                                     >
                                         denunciar perfil
                                     </button>
@@ -943,67 +898,10 @@
     </ConfirmDialog>
 {/if}
 
-{#if reporting}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <form
-            onsubmit={submitReport}
-            class="flex w-full max-w-md flex-col gap-3 rounded-theme border border-line bg-surface p-4"
-        >
-            <h2 class="text-base font-bold text-content">Denunciar {profile.name}</h2>
-            <p class="text-sm text-muted">
-                A denúncia é anônima: {firstName} não vê quem denunciou. Bloquear é uma ação separada
-                e continua disponível.
-            </p>
-
-            <label class="flex flex-col gap-1 text-sm">
-                <span class="text-muted">Motivo</span>
-                <select
-                    bind:value={reportReason}
-                    class="h-9 rounded-theme border border-line bg-canvas px-2 text-content focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-                >
-                    {#each REPORT_REASONS as reason}
-                        <option value={reason.value}>{reason.label}</option>
-                    {/each}
-                </select>
-            </label>
-
-            <label class="flex flex-col gap-1 text-sm">
-                <span class="text-muted">
-                    Detalhes {reportReason === "other" ? "(obrigatório)" : "(opcional)"}
-                </span>
-                <Textarea
-                    bind:value={reportDetails}
-                    rows={4}
-                    maxlength={REPORT_DETAILS_MAX_LENGTH}
-                />
-            </label>
-
-            {#if retryAfter > 0}
-                <p class="text-sm text-muted">
-                    Muitas tentativas seguidas. Tente de novo em {retryAfter} segundos.
-                </p>
-            {/if}
-
-            <div class="flex justify-end gap-2">
-                <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy}
-                    onclick={() => (reporting = false)}
-                >
-                    cancelar
-                </Button>
-                <Button
-                    size="sm"
-                    variant="danger"
-                    type="submit"
-                    disabled={busy ||
-                        retryAfter > 0 ||
-                        (reportReason === "other" && reportDetails.trim() === "")}
-                >
-                    enviar denúncia
-                </Button>
-            </div>
-        </form>
-    </div>
-{/if}
+<ReportDialog
+    bind:open={reporting}
+    kind="profile"
+    reference={profile.slug}
+    name={profile.name}
+    onreported={() => (reported = true)}
+/>

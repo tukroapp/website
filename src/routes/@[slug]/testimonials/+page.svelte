@@ -1,10 +1,12 @@
 <script lang="ts">
     import { refreshAll } from "$app/navigation";
     import { toast } from "svelte-sonner";
+    import AuthorLink from "#lib/components/AuthorLink.svelte";
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import EmptyState from "#lib/components/EmptyState.svelte";
     import LoadMore from "#lib/components/LoadMore.svelte";
+    import ReportDialog from "#lib/components/ReportDialog.svelte";
     import RichText from "#lib/components/RichText.svelte";
     import RichTextarea from "#lib/components/RichTextarea.svelte";
     import { isBlankBbcode } from "#lib/bbcode";
@@ -43,6 +45,21 @@
 
     function canDelete(testimonial: Testimonial): boolean {
         return isOwner || auth.user?.id === testimonial.profile.id;
+    }
+
+    /** Não faz sentido denunciar o próprio depoimento nem sem estar logado. */
+    function canReport(testimonial: Testimonial): boolean {
+        return !!auth.user && auth.user.id !== testimonial.profile.id;
+    }
+
+    let reporting = $state(false);
+    let reportRef = $state("");
+    let reportName = $state("");
+
+    function openReport(testimonial: Testimonial) {
+        reportRef = testimonial.id;
+        reportName = `o depoimento de ${testimonial.profile.name}`;
+        reporting = true;
     }
 
     async function loadMore() {
@@ -161,22 +178,22 @@
         <ul class="flex flex-col gap-2">
             {#each testimonials as testimonial (testimonial.id)}
                 <li class="flex gap-3 rounded-theme border border-line bg-surface p-3">
-                    <a href="/@{testimonial.profile.slug}" class="shrink-0">
+                    <AuthorLink slug={testimonial.profile.slug} class="shrink-0">
                         <Avatar
                             src={testimonial.profile.avatar_url}
                             name={testimonial.profile.name}
                             class="size-12"
                         />
-                    </a>
+                    </AuthorLink>
 
                     <div class="flex min-w-0 flex-1 flex-col gap-1">
                         <div class="flex flex-wrap items-baseline justify-between gap-2">
-                            <a
-                                href="/@{testimonial.profile.slug}"
+                            <AuthorLink
+                                slug={testimonial.profile.slug}
                                 class="font-bold text-primary underline underline-offset-2"
                             >
                                 {testimonial.profile.name}
-                            </a>
+                            </AuthorLink>
                             <span class="text-xs text-muted">
                                 {formatDateTime(testimonial.created_at)}
                             </span>
@@ -184,16 +201,27 @@
 
                         <RichText value={testimonial.body} class="text-sm text-content" />
 
-                        {#if canDelete(testimonial)}
-                            <button
-                                type="button"
-                                class="w-fit cursor-pointer text-xs text-primary underline underline-offset-2"
-                                disabled={busy}
-                                onclick={() => remove(testimonial)}
-                            >
-                                apagar
-                            </button>
-                        {/if}
+                        <div class="flex flex-wrap gap-3">
+                            {#if canDelete(testimonial)}
+                                <button
+                                    type="button"
+                                    class="w-fit cursor-pointer text-xs text-primary underline underline-offset-2"
+                                    disabled={busy}
+                                    onclick={() => remove(testimonial)}
+                                >
+                                    apagar
+                                </button>
+                            {/if}
+                            {#if canReport(testimonial)}
+                                <button
+                                    type="button"
+                                    class="w-fit cursor-pointer text-xs text-primary underline underline-offset-2"
+                                    onclick={() => openReport(testimonial)}
+                                >
+                                    denunciar
+                                </button>
+                            {/if}
+                        </div>
                     </div>
                 </li>
             {/each}
@@ -202,3 +230,5 @@
         <LoadMore cursor={nextCursor} {loading} onclick={loadMore} />
     {/if}
 </main>
+
+<ReportDialog bind:open={reporting} kind="testimonial" reference={reportRef} name={reportName} />

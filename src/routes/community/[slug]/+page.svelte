@@ -5,6 +5,7 @@
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
+    import ReportDialog from "#lib/components/ReportDialog.svelte";
     import {
         cancelJoinRequest,
         communityRoleLabel,
@@ -25,6 +26,7 @@
     let confirmingLeave = $state(false);
     /** O dono precisa transferir a comunidade antes de sair, e a API avisa isso num 409. */
     let mustTransfer = $state(false);
+    let reporting = $state(false);
 
     const community = $derived(data.community);
 
@@ -255,7 +257,18 @@
                 {/if}
             </div>
 
-            {@render primaryAction()}
+            <div class="flex flex-col items-end gap-1">
+                {@render primaryAction()}
+                {#if auth.user}
+                    <button
+                        type="button"
+                        class="cursor-pointer text-xs text-primary underline underline-offset-2"
+                        onclick={() => (reporting = true)}
+                    >
+                        denunciar comunidade
+                    </button>
+                {/if}
+            </div>
         </div>
 
         {#if mustTransfer}
@@ -510,3 +523,10 @@
         {/if}
     </ConfirmDialog>
 {/if}
+
+<ReportDialog
+    bind:open={reporting}
+    kind="community"
+    reference={community.slug}
+    name={`a comunidade ${community.name}`}
+/>

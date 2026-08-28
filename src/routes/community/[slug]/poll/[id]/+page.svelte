@@ -2,10 +2,12 @@
     import { goto, refreshAll } from "$app/navigation";
     import { page } from "$app/state";
     import { toast } from "svelte-sonner";
+    import AuthorLink from "#lib/components/AuthorLink.svelte";
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
     import FieldError from "#lib/components/FieldError.svelte";
+    import ReportDialog from "#lib/components/ReportDialog.svelte";
     import {
         POLL_MAX_OPTIONS,
         POLL_MIN_OPTIONS,
@@ -33,7 +35,11 @@
     let confirmingVote = $state(false);
     let confirmingClose = $state(false);
     let confirmingDelete = $state(false);
+    let reporting = $state(false);
     let errors = $state<Record<string, string[]>>({});
+
+    /** Não faz sentido denunciar a própria enquete nem sem estar logado. */
+    const canReportPoll = $derived(!!auth.user && poll.author.id !== auth.user.id);
 
     /** Marcações do leitor no formulário de voto, espelhando `poll.my_choices`. */
     let selected = $state<string[]>([]);
@@ -211,21 +217,21 @@
 
     <article class="flex flex-col gap-3 rounded-theme border border-line bg-surface p-4">
         <div class="flex items-center gap-3">
-            <a href="/@{poll.author.slug}" class="shrink-0">
+            <AuthorLink slug={poll.author.slug} class="shrink-0">
                 <Avatar
                     src={poll.author.avatar_url}
                     name={poll.author.name}
                     class="size-10"
                     textClass="text-sm"
                 />
-            </a>
+            </AuthorLink>
             <div class="min-w-0">
-                <a
-                    href="/@{poll.author.slug}"
+                <AuthorLink
+                    slug={poll.author.slug}
                     class="text-sm font-bold text-primary underline underline-offset-2"
                 >
                     {poll.author.name}
-                </a>
+                </AuthorLink>
                 <p class="text-xs text-muted">
                     {formatDateTime(poll.created_at)}
                     {#if poll.edited_at}(editado){/if}
@@ -418,7 +424,7 @@
                 {/if}
             {/if}
 
-            {#if poll.can_edit || poll.can_close || poll.can_delete}
+            {#if poll.can_edit || poll.can_close || poll.can_delete || canReportPoll}
                 <div class="flex flex-wrap gap-3 text-xs text-primary">
                     {#if poll.can_edit}
                         <button
@@ -450,11 +456,27 @@
                             excluir
                         </button>
                     {/if}
+                    {#if canReportPoll}
+                        <button
+                            type="button"
+                            class="cursor-pointer underline underline-offset-2"
+                            onclick={() => (reporting = true)}
+                        >
+                            denunciar
+                        </button>
+                    {/if}
                 </div>
             {/if}
         {/if}
     </article>
 </main>
+
+<ReportDialog
+    bind:open={reporting}
+    kind="poll"
+    reference={poll.id}
+    name={`a enquete "${poll.question}"`}
+/>
 
 {#if confirmingVote}
     <ConfirmDialog

@@ -4,15 +4,23 @@
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import Input from "#lib/components/Input.svelte";
+    import LoadMore from "#lib/components/LoadMore.svelte";
     import Textarea from "#lib/components/Textarea.svelte";
+    import { ApiError } from "#lib/error";
     import {
         SUSPEND_REASON_MAX_LENGTH,
         accountStatusLabel,
+        fetchAccountHistory,
+        moderationActionLabel,
+        restoreContent,
         suspendUser,
         unsuspendUser,
     } from "#lib/moderation";
     import {
+        REMOVE_REASON_MAX_LENGTH,
         dismissReport,
+        removeReportContent,
+        reportKindLabel,
         reportReasonLabel,
         reportStatusLabel,
         resolveReport,
@@ -20,6 +28,7 @@
     } from "#lib/report";
     import { formatDateTime } from "#lib/time";
     import { toastApiError } from "#lib/toast";
+    import type { ModerationHistoryItem } from "#lib/types";
 
     let { data } = $props();
 
@@ -28,10 +37,31 @@
     let suspendReason = $state("");
     let suspendUntil = $state("");
 
+    /** Qual formulário de conteúdo está aberto, se algum. */
+    let contentAction = $state<"remove" | "restore" | null>(null);
+    let contentReason = $state("");
+
+    let history = $state<ModerationHistoryItem[] | null>(null);
+    let historyCursor = $state<string | null>(null);
+    let historyLoading = $state(false);
+
     const report = $derived(data.report);
     const reported = $derived(report.reported);
+    const target = $derived(report.target);
+    const isProfileReport = $derived(target.kind === "profile");
+    /** Comunidade não expõe `is_deleted` no detalhe, então lá o botão de remover fica sempre visível. */
+    const targetDeleted = $derived("is_deleted" in target && target.is_deleted);
     /** O sinal de abuso mais barato de olhar, vale destacar quando cresce. */
     const heavilyBlocked = $derived((reported?.blocked_by_count ?? 0) >= 5);
+
+    // Trocar de denúncia zera o histórico já carregado.
+    $effect(() => {
+        report.id;
+        history = null;
+        historyCursor = null;
+        contentAction = null;
+        contentReason = "";
+    });
 
     async function act(action: (id: string) => Promise<void>, message: string) {
         busy = true;
@@ -41,6 +71,44 @@
             toast.success(message);
         } catch (error) {
             toastApiError(error);
+        } finally {
+            busy = false;
+        }
+    }
+
+    function startContentAction(kind: "remove" | "restore") {
+        contentAction = kind;
+        contentReason = "";
+    }
+
+    async function submitContentAction(event: SubmitEvent) {
+        event.preventDefault();
+        if (busy || isProfileReport || target.kind === "profile") return;
+        busy = true;
+
+        try {
+            if (contentAction === "remove") {
+                await removeReportContent(report.id, contentReason);
+                toast.success("Conteúdo removido");
+            } else {
+                await restoreContent(target.kind, target.id, contentReason);
+                toast.success("Conteúdo restaurado");
+            }
+            contentAction = null;
+            history = null;
+            await refreshAll();
+        } catch (error) {
+            if (error instanceof ApiError && error.status === 409) {
+                toast.info("O conteúdo já estava fora do ar");
+            } else if (
+                error instanceof ApiError &&
+                error.status === 404 &&
+                contentAction === "restore"
+            ) {
+                toast.error("Não dá para restaurar: quem apagou foi o próprio autor");
+            } else {
+                toastApiError(error);
+            }
         } finally {
             busy = false;
         }
@@ -60,6 +128,7 @@
             suspending = false;
             suspendReason = "";
             suspendUntil = "";
+            history = null;
             toast.success("Conta suspensa");
         } catch (error) {
             toastApiError(error);
@@ -75,11 +144,40 @@
         try {
             await unsuspendUser(reported.slug);
             await refreshAll();
+            history = null;
             toast.success("Suspensão revogada");
         } catch (error) {
             toastApiError(error);
         } finally {
             busy = false;
+        }
+    }
+
+    async function openHistory() {
+        if (!reported || history !== null) return;
+        historyLoading = true;
+        try {
+            const page = await fetchAccountHistory(reported.slug);
+            history = page.results;
+            historyCursor = page.next_cursor;
+        } catch (error) {
+            toastApiError(error);
+        } finally {
+            historyLoading = false;
+        }
+    }
+
+    async function loadMoreHistory() {
+        if (!reported || !historyCursor) return;
+        historyLoading = true;
+        try {
+            const page = await fetchAccountHistory(reported.slug, historyCursor);
+            history = [...(history ?? []), ...page.results];
+            historyCursor = page.next_cursor;
+        } catch (error) {
+            toastApiError(error);
+        } finally {
+            historyLoading = false;
         }
     }
 </script>
@@ -89,7 +187,7 @@
 <main class="mx-auto flex w-full max-w-3xl flex-col gap-3 p-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
         <h1 class="text-lg font-bold text-content">
-            {reportReasonLabel(report.reason)}
+            {reportKindLabel(target.kind)} · {reportReasonLabel(report.reason)}
         </h1>
         <a href="/admin/reports" class="text-sm text-primary underline underline-offset-2">
             voltar para a fila
@@ -151,14 +249,175 @@
         </div>
 
         <p class="text-xs text-muted">
-            Registrar a decisão não desativa a conta nem apaga conteúdo.
+            Registrar a decisão não suspende a conta nem tira conteúdo do ar.
         </p>
     </div>
+
+    {#if !isProfileReport}
+        <div class="flex flex-col gap-2 rounded-theme border border-line bg-surface p-3">
+            <div
+                class="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-1"
+            >
+                <h2 class="text-base font-bold text-content">Conteúdo denunciado</h2>
+                {#if targetDeleted}
+                    <span class="rounded-theme bg-danger px-1.5 py-0.5 text-xs text-on-danger">
+                        fora do ar
+                    </span>
+                {/if}
+            </div>
+
+            {#if target.kind === "scrap"}
+                <p class="text-xs text-muted">
+                    Recado no mural de
+                    <a
+                        href="/@{target.wall_slug}"
+                        class="text-primary underline underline-offset-2"
+                    >
+                        @{target.wall_slug}
+                    </a>
+                    {#if target.is_reply}(resposta){/if} · {formatDateTime(target.created_at)}
+                </p>
+                <p class="text-sm break-words whitespace-pre-wrap text-content">{target.body}</p>
+            {:else if target.kind === "testimonial"}
+                <p class="text-xs text-muted">
+                    Depoimento para
+                    <a
+                        href="/@{target.profile_slug}"
+                        class="text-primary underline underline-offset-2"
+                    >
+                        @{target.profile_slug}
+                    </a>
+                    · {target.status} · {formatDateTime(target.created_at)}
+                </p>
+                <p class="text-sm break-words whitespace-pre-wrap text-content">{target.body}</p>
+            {:else if target.kind === "community"}
+                <p class="text-xs text-muted">
+                    Comunidade
+                    <a
+                        href="/community/{target.slug}"
+                        class="text-primary underline underline-offset-2"
+                    >
+                        {target.name}
+                    </a>
+                    · {target.members_count} membros · {target.is_private ? "privada" : "pública"} · dono
+                    @{target.owner_slug} · criada em {formatDateTime(target.created_at)}
+                </p>
+                {#if target.description}
+                    <p class="text-sm break-words whitespace-pre-wrap text-content">
+                        {target.description}
+                    </p>
+                {/if}
+            {:else if target.kind === "topic"}
+                <p class="text-xs text-muted">
+                    Tópico em
+                    <a
+                        href="/community/{target.community_slug}/topic/{target.id}"
+                        class="text-primary underline underline-offset-2"
+                    >
+                        /community/{target.community_slug}
+                    </a>
+                    {#if target.is_locked}(trancado){/if} · {formatDateTime(target.created_at)}
+                </p>
+                <p class="font-medium text-content">{target.title}</p>
+                <p class="text-sm break-words whitespace-pre-wrap text-content">{target.body}</p>
+            {:else if target.kind === "comment"}
+                <p class="text-xs text-muted">
+                    Comentário no tópico
+                    <a
+                        href="/community/{target.community_slug}/topic/{target.topic_id}"
+                        class="text-primary underline underline-offset-2"
+                    >
+                        {target.topic_title}
+                    </a>
+                    · {formatDateTime(target.created_at)}
+                </p>
+                <p class="text-sm break-words whitespace-pre-wrap text-content">{target.body}</p>
+            {:else if target.kind === "poll"}
+                <p class="text-xs text-muted">
+                    Enquete em
+                    <a
+                        href="/community/{target.community_slug}/poll/{target.id}"
+                        class="text-primary underline underline-offset-2"
+                    >
+                        /community/{target.community_slug}
+                    </a>
+                    · {target.is_closed ? "encerrada" : "aberta"}
+                    {#if target.closes_at}· fecha em {formatDateTime(target.closes_at)}{/if}
+                    · {formatDateTime(target.created_at)}
+                </p>
+                <p class="font-medium text-content">{target.question}</p>
+                <ul class="flex flex-col gap-1 text-sm text-content">
+                    {#each target.options as option}
+                        <li>· {option}</li>
+                    {/each}
+                </ul>
+            {/if}
+
+            {#if contentAction}
+                <form class="flex flex-col gap-2" onsubmit={submitContentAction}>
+                    <label class="text-sm text-muted" for="content-reason">
+                        Motivo registrado no histórico, opcional
+                    </label>
+                    <Textarea
+                        id="content-reason"
+                        variant="form"
+                        maxlength={REMOVE_REASON_MAX_LENGTH}
+                        bind:value={contentReason}
+                    />
+                    <div class="flex flex-wrap gap-2">
+                        <Button
+                            size="sm"
+                            variant={contentAction === "remove" ? "danger" : "primary"}
+                            type="submit"
+                            disabled={busy}
+                        >
+                            {contentAction === "remove"
+                                ? "confirmar remoção"
+                                : "confirmar restauração"}
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busy}
+                            onclick={() => (contentAction = null)}
+                        >
+                            cancelar
+                        </Button>
+                    </div>
+                </form>
+            {:else if targetDeleted}
+                <div>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onclick={() => startContentAction("restore")}
+                    >
+                        restaurar conteúdo
+                    </Button>
+                </div>
+            {:else}
+                <div>
+                    <Button
+                        size="sm"
+                        variant="danger"
+                        disabled={busy}
+                        onclick={() => startContentAction("remove")}
+                    >
+                        remover conteúdo
+                    </Button>
+                    <p class="mt-1 text-xs text-muted">
+                        Tira o conteúdo do ar e encerra esta denúncia como procedente.
+                    </p>
+                </div>
+            {/if}
+        </div>
+    {/if}
 
     {#if reported}
         <div class="flex flex-col gap-2 rounded-theme border border-line bg-surface p-3">
             <h2 class="border-b border-line pb-1 text-base font-bold text-content">
-                Conta denunciada
+                Conta responsável
             </h2>
 
             <div class="flex items-center gap-3">
@@ -256,6 +515,62 @@
                     </Button>
                 </div>
             {/if}
+
+            <div class="border-t border-line pt-2">
+                {#if history === null}
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={historyLoading}
+                        onclick={openHistory}
+                    >
+                        {historyLoading ? "carregando..." : "ver histórico de moderação"}
+                    </Button>
+                {:else if history.length === 0}
+                    <p class="text-sm text-muted">Nenhuma ação de moderação nesta conta.</p>
+                {:else}
+                    <ul class="flex flex-col gap-2 text-sm">
+                        {#each history as item (item.id)}
+                            <li class="rounded-theme border border-line p-2">
+                                <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
+                                    <span class="font-medium text-content">
+                                        {moderationActionLabel(item.action)}
+                                    </span>
+                                    <span>{formatDateTime(item.created_at)}</span>
+                                    {#if item.moderator}
+                                        <span>por {item.moderator.name}</span>
+                                    {/if}
+                                    {#if item.report_id}
+                                        <a
+                                            href="/admin/reports/{item.report_id}"
+                                            class="text-primary underline underline-offset-2"
+                                        >
+                                            denúncia
+                                        </a>
+                                    {/if}
+                                </div>
+                                {#if item.reason}
+                                    <p class="break-words whitespace-pre-wrap text-content">
+                                        {item.reason}
+                                    </p>
+                                {/if}
+                                {#if item.content_snapshot}
+                                    <p
+                                        class="mt-1 text-xs break-words whitespace-pre-wrap text-muted"
+                                    >
+                                        {item.content_snapshot}
+                                    </p>
+                                {/if}
+                            </li>
+                        {/each}
+                    </ul>
+                    <LoadMore
+                        cursor={historyCursor}
+                        loading={historyLoading}
+                        onclick={loadMoreHistory}
+                    />
+                {/if}
+            </div>
         </div>
     {/if}
 

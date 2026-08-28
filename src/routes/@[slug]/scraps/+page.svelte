@@ -1,10 +1,12 @@
 <script lang="ts">
     import { refreshAll } from "$app/navigation";
     import { toast } from "svelte-sonner";
+    import AuthorLink from "#lib/components/AuthorLink.svelte";
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import EmptyState from "#lib/components/EmptyState.svelte";
     import LoadMore from "#lib/components/LoadMore.svelte";
+    import ReportDialog from "#lib/components/ReportDialog.svelte";
     import RichText from "#lib/components/RichText.svelte";
     import RichTextarea from "#lib/components/RichTextarea.svelte";
     import {
@@ -61,6 +63,21 @@
 
     function canDelete(scrap: Scrap): boolean {
         return canEdit(scrap) || isWallOwner;
+    }
+
+    /** Não faz sentido denunciar o próprio recado nem sem estar logado. */
+    function canReport(scrap: Scrap): boolean {
+        return !!auth.user && auth.user.id !== scrap.author.id;
+    }
+
+    let reporting = $state(false);
+    let reportRef = $state("");
+    let reportName = $state("");
+
+    function openReport(scrap: Scrap) {
+        reportRef = scrap.id;
+        reportName = `o recado de ${scrap.author.name}`;
+        reporting = true;
     }
 
     async function loadMore() {
@@ -239,9 +256,12 @@
 
 {#snippet header(scrap: Scrap)}
     <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <a href="/@{scrap.author.slug}" class="font-bold text-primary underline underline-offset-2">
+        <AuthorLink
+            slug={scrap.author.slug}
+            class="font-bold text-primary underline underline-offset-2"
+        >
             {scrap.author.name}
-        </a>
+        </AuthorLink>
         <span class="text-xs text-muted">
             {formatDateTime(scrap.created_at)}
             {#if scrap.updated_at !== scrap.created_at}(editado){/if}
@@ -290,13 +310,13 @@
             <ul class="flex flex-col gap-2">
                 {#each scraps as scrap (scrap.id)}
                     <li class="flex gap-3 rounded-theme border border-line bg-surface p-3">
-                        <a href="/@{scrap.author.slug}" class="shrink-0">
+                        <AuthorLink slug={scrap.author.slug} class="shrink-0">
                             <Avatar
                                 src={scrap.author.avatar_url}
                                 name={scrap.author.name}
                                 class="size-12"
                             />
-                        </a>
+                        </AuthorLink>
 
                         <div class="flex min-w-0 flex-1 flex-col gap-1">
                             {@render header(scrap)}
@@ -355,6 +375,15 @@
                                             apagar
                                         </button>
                                     {/if}
+                                    {#if canReport(scrap)}
+                                        <button
+                                            type="button"
+                                            class="cursor-pointer underline underline-offset-2"
+                                            onclick={() => openReport(scrap)}
+                                        >
+                                            denunciar
+                                        </button>
+                                    {/if}
                                 </div>
                             {/if}
 
@@ -377,14 +406,14 @@
 
                                     {#each threads[scrap.id].replies as reply (reply.id)}
                                         <div class="flex gap-2">
-                                            <a href="/@{reply.author.slug}" class="shrink-0">
+                                            <AuthorLink slug={reply.author.slug} class="shrink-0">
                                                 <Avatar
                                                     src={reply.author.avatar_url}
                                                     name={reply.author.name}
                                                     class="size-8"
                                                     textClass="text-xs"
                                                 />
-                                            </a>
+                                            </AuthorLink>
 
                                             <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                                                 {@render header(reply)}
@@ -392,16 +421,28 @@
                                                     value={reply.body}
                                                     class="text-sm text-content"
                                                 />
-                                                {#if canDelete(reply)}
-                                                    <button
-                                                        type="button"
-                                                        class="w-fit cursor-pointer text-xs text-primary underline underline-offset-2"
-                                                        disabled={busy}
-                                                        onclick={() => removeReply(scrap, reply)}
-                                                    >
-                                                        apagar
-                                                    </button>
-                                                {/if}
+                                                <div class="flex flex-wrap gap-3">
+                                                    {#if canDelete(reply)}
+                                                        <button
+                                                            type="button"
+                                                            class="w-fit cursor-pointer text-xs text-primary underline underline-offset-2"
+                                                            disabled={busy}
+                                                            onclick={() =>
+                                                                removeReply(scrap, reply)}
+                                                        >
+                                                            apagar
+                                                        </button>
+                                                    {/if}
+                                                    {#if canReport(reply)}
+                                                        <button
+                                                            type="button"
+                                                            class="w-fit cursor-pointer text-xs text-primary underline underline-offset-2"
+                                                            onclick={() => openReport(reply)}
+                                                        >
+                                                            denunciar
+                                                        </button>
+                                                    {/if}
+                                                </div>
                                             </div>
                                         </div>
                                     {/each}
@@ -435,3 +476,5 @@
         {/if}
     {/if}
 </main>
+
+<ReportDialog bind:open={reporting} kind="scrap" reference={reportRef} name={reportName} />

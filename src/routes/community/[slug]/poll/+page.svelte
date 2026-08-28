@@ -1,4 +1,5 @@
 <script lang="ts">
+    import AuthorLink from "#lib/components/AuthorLink.svelte";
     import EmptyState from "#lib/components/EmptyState.svelte";
     import LoadMore from "#lib/components/LoadMore.svelte";
     import { fetchCommunityPolls, pollStatusLabel, votesLabel } from "#lib/poll";
@@ -69,12 +70,12 @@
                         </a>
                         <p class="text-xs text-muted">
                             por
-                            <a
-                                href="/@{poll.author.slug}"
+                            <AuthorLink
+                                slug={poll.author.slug}
                                 class="text-primary underline underline-offset-2"
                             >
                                 {poll.author.name}
-                            </a>
+                            </AuthorLink>
                             &middot; {pollStatusLabel(poll)}
                             {#if poll.total_votes !== null}
                                 &middot; {votesLabel(poll.total_votes)}

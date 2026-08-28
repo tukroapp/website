@@ -1,6 +1,7 @@
 <script lang="ts">
     import { refreshAll } from "$app/navigation";
     import { toast } from "svelte-sonner";
+    import AuthorLink from "#lib/components/AuthorLink.svelte";
     import Avatar from "#lib/components/Avatar.svelte";
     import Button from "#lib/components/Button.svelte";
     import EmptyState from "#lib/components/EmptyState.svelte";
@@ -175,23 +176,23 @@
         <ul class="flex flex-col gap-2">
             {#each testimonials as testimonial (testimonial.id)}
                 <li class="flex gap-3 rounded-theme border border-line bg-surface p-3">
-                    <a href="/@{testimonial.profile.slug}" class="shrink-0">
+                    <AuthorLink slug={testimonial.profile.slug} class="shrink-0">
                         <Avatar
                             src={testimonial.profile.avatar_url}
                             name={testimonial.profile.name}
                             class="size-12"
                         />
-                    </a>
+                    </AuthorLink>
 
                     <div class="flex min-w-0 flex-1 flex-col gap-1">
                         <div class="flex flex-wrap items-baseline justify-between gap-2">
-                            <a
-                                href="/@{testimonial.profile.slug}"
+                            <AuthorLink
+                                slug={testimonial.profile.slug}
                                 class="font-bold text-primary underline underline-offset-2"
                             >
                                 {data.direction === "received" ? "de" : "para"}
                                 {testimonial.profile.name}
-                            </a>
+                            </AuthorLink>
                             <span class="text-xs text-muted">
                                 {formatDateTime(testimonial.created_at)}
                             </span>

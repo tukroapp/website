@@ -1,5 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state";
+    import AuthorLink from "#lib/components/AuthorLink.svelte";
     import Avatar from "#lib/components/Avatar.svelte";
     import EmptyState from "#lib/components/EmptyState.svelte";
     import LoadMore from "#lib/components/LoadMore.svelte";
@@ -93,14 +94,14 @@
             <ul class="flex flex-col gap-2">
                 {#each topics as topic (topic.id)}
                     <li class="flex gap-3 rounded-theme border border-line bg-surface p-3">
-                        <a href="/@{topic.author.slug}" class="shrink-0">
+                        <AuthorLink slug={topic.author.slug} class="shrink-0">
                             <Avatar
                                 src={topic.author.avatar_url}
                                 name={topic.author.name}
                                 class="size-10"
                                 textClass="text-sm"
                             />
-                        </a>
+                        </AuthorLink>
 
                         <div class="flex min-w-0 flex-1 flex-col gap-1">
                             <div class="flex flex-wrap items-center gap-2">
@@ -128,12 +129,12 @@
 
                             <p class="text-xs text-muted">
                                 por
-                                <a
-                                    href="/@{topic.author.slug}"
+                                <AuthorLink
+                                    slug={topic.author.slug}
                                     class="text-primary underline underline-offset-2"
                                 >
                                     {topic.author.name}
-                                </a>
+                                </AuthorLink>
                                 &middot; {commentsLabel(topic.comment_count)}
                                 &middot; última atividade {timeSince(topic.last_activity_at)}
                             </p>

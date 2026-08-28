@@ -34,6 +34,15 @@ export function relationshipStatusLabel(value: RelationshipStatus | null): strin
     return RELATIONSHIP_STATUS_OPTIONS.find((option) => option.value === value)?.label ?? null;
 }
 
+/**
+ * Conta excluída e anonimizada: o slug vira `deleted-xxxx`, o nome "Usuário
+ * excluído" e a página do perfil responde `404`. Serve para não linkar o autor
+ * de um recado, depoimento ou comentário que sobreviveu à exclusão.
+ */
+export function isDeletedProfile(slug: string): boolean {
+    return slug.startsWith("deleted-");
+}
+
 /** Anos completos, descontando o aniversário que ainda não chegou neste ano. */
 export function ageFromBirthdate(birthdate: string): number {
     const [year, month, day] = birthdate.split("-").map(Number);
