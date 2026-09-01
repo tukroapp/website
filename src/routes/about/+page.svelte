@@ -104,6 +104,27 @@
         </p>
     </section>
 
+    <section class="flex flex-col gap-3 rounded-theme border border-line bg-surface p-4 sm:p-6">
+        <h2 class="text-lg font-bold text-content">As regras e seus dados</h2>
+
+        <p class="text-sm text-content">
+            O que vale para usar o site e o que é feito com o que você publica está escrito nos
+            <a
+                href="/terms#termos"
+                class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+            >
+                Termos de uso
+            </a>
+            e no
+            <a
+                href="/terms#privacidade"
+                class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+            >
+                Aviso de privacidade
+            </a>. São curtos e sem juridiquês, vale a leitura antes de criar a conta.
+        </p>
+    </section>
+
     {#if !auth.user}
         <a
             href="/login"

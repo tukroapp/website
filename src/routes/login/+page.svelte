@@ -305,6 +305,19 @@
                     Criar conta
                 </a>
             </p>
+
+            <p class="flex flex-wrap justify-center gap-x-3 gap-y-1 text-center text-xs text-muted">
+                <a href="/about" class="underline underline-offset-2 hover:text-content">Sobre</a>
+                <a href="/terms#termos" class="underline underline-offset-2 hover:text-content">
+                    Termos de uso
+                </a>
+                <a
+                    href="/terms#privacidade"
+                    class="underline underline-offset-2 hover:text-content"
+                >
+                    Privacidade
+                </a>
+            </p>
         </div>
     </div>
 </main>

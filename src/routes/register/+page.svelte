@@ -119,8 +119,20 @@
             </Button>
 
             <p class="text-xs text-muted">
-                Ao criar a conta você concorda que isto aqui é um projeto pessoal, feito por
-                diversão.
+                Ao criar a conta você declara ter 18 anos ou mais e concorda com os
+                <a
+                    href="/terms#termos"
+                    class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                >
+                    Termos de uso
+                </a>
+                e com o
+                <a
+                    href="/terms#privacidade"
+                    class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                >
+                    Aviso de privacidade
+                </a>. Concorda também que isto aqui é um projeto pessoal, feito por diversão.
                 <a
                     href="/about"
                     class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"

@@ -15,7 +15,7 @@ const PUBLIC_ROUTES = ["/login", "/register"];
  * Aberto para todo mundo, logado ou não. O fluxo de troca de senha cai aqui porque o link
  * do e-mail precisa funcionar mesmo para quem ainda tem sessão aberta.
  */
-const OPEN_ROUTES = ["/about", "/auth/forgot-password", "/auth/reset-password"];
+const OPEN_ROUTES = ["/about", "/terms", "/auth/forgot-password", "/auth/reset-password"];
 
 /** Perfil é legível sem login, o backend esconde o que quem visita não pode ver. */
 const PROFILE_PREFIX = "/@";
