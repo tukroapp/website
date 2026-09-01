@@ -53,6 +53,15 @@ class AuthState {
         return this.login({ email: payload.email, password: payload.password }, fetchFn);
     }
 
+    /**
+     * Grava o aceite da versão em vigor. Chame só no clique do botão: cada
+     * chamada vira uma linha nova no histórico, que é a prova do consentimento.
+     */
+    async acceptTerms(fetchFn: typeof fetch = fetch): Promise<void> {
+        await apiFetch.post<void>("/api/v1/me/terms", undefined, {}, fetchFn);
+        await this.fetchUser(fetchFn);
+    }
+
     async fetchUser(fetchFn: typeof fetch = fetch): Promise<void> {
         try {
             const res = await apiFetch.get<ApiResponse<MeResponse>>("/api/v1/me", {}, fetchFn);

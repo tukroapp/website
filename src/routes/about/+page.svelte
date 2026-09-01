@@ -112,6 +112,8 @@
             <a
                 href="/terms#termos"
                 class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                target="_blank"
+                rel="noopener noreferrer"
             >
                 Termos de uso
             </a>
@@ -119,6 +121,8 @@
             <a
                 href="/terms#privacidade"
                 class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                target="_blank"
+                rel="noopener noreferrer"
             >
                 Aviso de privacidade
             </a>. São curtos e sem juridiquês, vale a leitura antes de criar a conta.

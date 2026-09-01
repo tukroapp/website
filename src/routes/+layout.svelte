@@ -6,6 +6,7 @@
     import LinkPrompt from "#lib/components/LinkPrompt.svelte";
     import Navbar from "#lib/components/Navbar.svelte";
     import NavigationProgress from "#lib/components/NavigationProgress.svelte";
+    import TermsGate from "#lib/components/TermsGate.svelte";
     import { fetchUnreadCounts } from "#lib/message";
     import { pollWhileVisible } from "#lib/polling";
     import { auth } from "#lib/state/user.svelte";
@@ -76,5 +77,6 @@
 {/if}
 
 <LinkPrompt />
+<TermsGate />
 
 {@render children()}

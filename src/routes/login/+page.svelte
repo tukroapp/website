@@ -280,6 +280,27 @@
                     <span class="h-px flex-1 bg-line"></span>
                 </div>
 
+                <p class="text-sm text-content">
+                    Ao continuar com o Google, você aceita os
+                    <a
+                        href="/terms#termos"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                    >
+                        termos de uso
+                    </a>
+                    e a
+                    <a
+                        href="/terms#privacidade"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                    >
+                        política de privacidade
+                    </a>.
+                </p>
+
                 <Button
                     variant="outline"
                     size="lg"
@@ -308,12 +329,19 @@
 
             <p class="flex flex-wrap justify-center gap-x-3 gap-y-1 text-center text-xs text-muted">
                 <a href="/about" class="underline underline-offset-2 hover:text-content">Sobre</a>
-                <a href="/terms#termos" class="underline underline-offset-2 hover:text-content">
+                <a
+                    href="/terms#termos"
+                    class="underline underline-offset-2 hover:text-content"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
                     Termos de uso
                 </a>
                 <a
                     href="/terms#privacidade"
                     class="underline underline-offset-2 hover:text-content"
+                    target="_blank"
+                    rel="noopener noreferrer"
                 >
                     Privacidade
                 </a>

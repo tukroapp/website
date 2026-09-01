@@ -15,6 +15,8 @@
     let email = $state("");
     let password = $state("");
     let passwordConfirmation = $state("");
+    // Começa desmarcado de propósito: consentimento pré-marcado não vale.
+    let acceptedTerms = $state(false);
     let loading = $state(false);
     let errors = $state<Record<string, string[]>>({});
 
@@ -31,7 +33,12 @@
         errors = {};
 
         try {
-            const user = await auth.register({ name, email, password });
+            const user = await auth.register({
+                name,
+                email,
+                password,
+                accepted_terms: acceptedTerms,
+            });
             toast.success(`Conta criada. Boas-vindas, ${user.name}`);
             await goto(next, { replaceState: true });
         } catch (error) {
@@ -114,25 +121,43 @@
                 <FieldError messages={errors.password_confirmation} />
             </div>
 
-            <Button type="submit" size="lg" class="w-full" disabled={loading}>
+            <div class="flex flex-col gap-1.5">
+                <label class="flex items-start gap-2 text-xs text-muted">
+                    <input
+                        type="checkbox"
+                        bind:checked={acceptedTerms}
+                        class="mt-0.5 size-4 shrink-0 rounded-theme border-line text-primary focus:ring-primary"
+                    />
+                    <span>
+                        Declaro ter 18 anos ou mais e aceito os
+                        <a
+                            href="/terms#termos"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                        >
+                            termos de uso
+                        </a>
+                        e a
+                        <a
+                            href="/terms#privacidade"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                        >
+                            política de privacidade
+                        </a>.
+                    </span>
+                </label>
+                <FieldError messages={errors.accepted_terms} />
+            </div>
+
+            <Button type="submit" size="lg" class="w-full" disabled={loading || !acceptedTerms}>
                 {loading ? "Criando conta..." : "Criar conta"}
             </Button>
 
             <p class="text-xs text-muted">
-                Ao criar a conta você declara ter 18 anos ou mais e concorda com os
-                <a
-                    href="/terms#termos"
-                    class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
-                >
-                    Termos de uso
-                </a>
-                e com o
-                <a
-                    href="/terms#privacidade"
-                    class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
-                >
-                    Aviso de privacidade
-                </a>. Concorda também que isto aqui é um projeto pessoal, feito por diversão.
+                Isto aqui é um projeto pessoal, feito por diversão.
                 <a
                     href="/about"
                     class="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"

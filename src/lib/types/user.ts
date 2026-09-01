@@ -97,6 +97,8 @@ export interface MeResponse extends PrivacySettings, ProfileDetails {
     unread_notifications_count: number;
     /** Contador do badge de mensagens, separado do das notificações. */
     unread_messages_count: number;
+    /** Versão dos termos que falta aceitar. `null` quando está em dia. */
+    pending_terms_version: string | null;
     slug: string;
     name: string;
     avatar_url: string | null;
@@ -161,6 +163,8 @@ export interface RegisterRequest {
     email: string;
     password: string;
     name: string;
+    /** Obrigatório e sempre `true`: o backend grava uma linha de aceite por cadastro. */
+    accepted_terms: boolean;
 }
 
 export interface RegisterResponse {

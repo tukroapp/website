@@ -158,7 +158,8 @@
         </p>
         <p class="text-sm text-content">
             <strong>Registros técnicos:</strong> data, hora e endereço IP dos acessos, guardados para
-            operar o serviço, investigar abuso e cumprir a obrigação legal de manter registros de conexão.
+            operar o serviço, investigar abuso e cumprir a obrigação legal de guardar registros de acesso
+            a aplicação.
         </p>
 
         <h3 class="text-sm font-bold text-content">3. Para que é usado</h3>
@@ -206,9 +207,10 @@
         <p class="text-sm text-content">
             Enquanto a sua conta existir. Conta desativada mantém os dados guardados e fora do ar
             até você voltar. Pedida a exclusão, os dados e os arquivos são apagados 30 dias depois.
-            Registros de conexão são mantidos pelo prazo da legislação brasileira, e informações
-            necessárias para apurar abuso ou cumprir obrigação legal podem ser mantidas mesmo após a
-            exclusão, pelo tempo estritamente necessário.
+            Os registros de acesso a aplicação são guardados por 6 meses, como manda o artigo 15 do
+            Marco Civil da Internet, e informações necessárias para apurar abuso ou cumprir
+            obrigação legal podem ser mantidas mesmo após a exclusão, pelo tempo estritamente
+            necessário.
         </p>
 
         <h3 class="text-sm font-bold text-content">9. Seus direitos</h3>
