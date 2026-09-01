@@ -141,13 +141,13 @@
             label: "fotos",
             icon: "photos" as const,
             href: `/@${profile.slug}/album?kind=photo`,
-            count: data.media?.photo,
+            count: profile.photos_count,
         },
         {
             label: "vídeos",
             icon: "videos" as const,
             href: `/@${profile.slug}/album?kind=video`,
-            count: data.media?.video,
+            count: profile.videos_count,
         },
         {
             label: "depoimentos",
@@ -167,12 +167,12 @@
         {
             label: "fotos",
             icon: "photos" as const,
-            value: data.media?.photo.toString() ?? "álbum privado",
+            value: profile.photos_count?.toString() ?? "álbum privado",
         },
         {
             label: "vídeos",
             icon: "videos" as const,
-            value: data.media?.video.toString() ?? "álbum privado",
+            value: profile.videos_count?.toString() ?? "álbum privado",
         },
         {
             label: "depoimentos",

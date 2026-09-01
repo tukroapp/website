@@ -85,6 +85,22 @@ O `.env` tem duas variáveis:
 
 Leia a seção Backend acima antes de esperar que a aplicação funcione inteira.
 
+### Build de produção
+
+As duas variáveis são `static` (veja `src/env.ts`), então o valor é **embutido no
+bundle na hora do build**, não lido em tempo de execução. Buildar com o `.env` de
+desenvolvimento gera um site apontando para `http://localhost:8001`.
+
+Antes de `bun run build`, crie um `.env.production`, que o Vite carrega sozinho no
+modo de produção:
+
+```sh
+PUBLIC_API_BASE_URL=https://api.tukro.app
+PUBLIC_ENV=prod
+```
+
+O resultado sai em `build/`, que é o diretório estático a servir no Nginx.
+
 ## Scripts
 
 | Comando           | O que faz                                     |

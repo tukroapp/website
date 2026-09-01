@@ -1,22 +1,13 @@
 import { error } from "@sveltejs/kit";
 import { fetchProfileAlbums } from "#lib/album";
 import { ApiError } from "#lib/error";
-import { MEDIA_COUNT_LIMIT, fetchProfileMedia } from "#lib/media";
+import { fetchProfileMedia } from "#lib/media";
 import { fetchProfile } from "#lib/profile";
 import type { AlbumSummary, Media, MediaCounts, MediaKind } from "#lib/types";
 import type { PageLoadEvent } from "./$types";
 
 function readKind(value: string | null): MediaKind | null {
     return value === "photo" || value === "video" ? value : null;
-}
-
-/** O dono vê "7/10 fotos", e o álbum é pequeno o bastante para contar numa página só. */
-async function fetchCounts(slug: string, fetchFn: typeof fetch): Promise<MediaCounts> {
-    const [photos, videos] = await Promise.all([
-        fetchProfileMedia(slug, "photo", null, MEDIA_COUNT_LIMIT, fetchFn),
-        fetchProfileMedia(slug, "video", null, MEDIA_COUNT_LIMIT, fetchFn),
-    ]);
-    return { photo: photos.results.length, video: videos.results.length };
 }
 
 export async function load({ params, url, fetch }: PageLoadEvent) {
@@ -47,7 +38,10 @@ export async function load({ params, url, fetch }: PageLoadEvent) {
             albums: albumPage.results,
             albumsCursor: albumPage.next_cursor,
             isPrivate: false,
-            counts: isOwner ? await fetchCounts(params.slug, fetch) : null,
+            // O dono vê "7/30 fotos", e os dois contadores já vêm no perfil.
+            counts: isOwner
+                ? { photo: profile.photos_count ?? 0, video: profile.videos_count ?? 0 }
+                : null,
         };
     } catch (err) {
         // O único 403 aqui é o dono mantendo o perfil privado.

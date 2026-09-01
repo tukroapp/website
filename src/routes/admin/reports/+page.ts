@@ -1,17 +1,11 @@
-import { fetchReports } from "#lib/report";
+import { REPORT_KINDS, fetchReports } from "#lib/report";
 import type { ReportKind, ReportStatus } from "#lib/types";
 import type { PageLoadEvent } from "./$types";
 
 const STATUSES: ReportStatus[] = ["open", "reviewing", "resolved", "dismissed"];
-const KINDS: ReportKind[] = [
-    "profile",
-    "scrap",
-    "testimonial",
-    "community",
-    "topic",
-    "comment",
-    "poll",
-];
+// Sai da mesma lista que desenha os filtros na tela: separar as duas já deixou
+// os tipos novos aparecendo como pill e caindo fora do filtro.
+const KINDS: ReportKind[] = REPORT_KINDS.map((item) => item.value);
 
 /** Ausente significa a caixa padrão, "abertas". O literal "all" é o único jeito de ver todas. */
 function readStatus(value: string | null): ReportStatus | null {

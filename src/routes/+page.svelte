@@ -77,8 +77,12 @@
 
     const sections = $derived([
         { label: "recados", href: `/@${profile.slug}/scraps`, count: profile.scraps_count },
-        { label: "fotos", href: `/@${profile.slug}/album?kind=photo`, count: null },
-        { label: "vídeos", href: `/@${profile.slug}/album?kind=video`, count: null },
+        { label: "fotos", href: `/@${profile.slug}/album?kind=photo`, count: profile.photos_count },
+        {
+            label: "vídeos",
+            href: `/@${profile.slug}/album?kind=video`,
+            count: profile.videos_count,
+        },
         {
             label: "depoimentos",
             href: `/@${profile.slug}/testimonials`,

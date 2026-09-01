@@ -33,7 +33,6 @@
     let poll = $derived(data.poll);
     let busy = $state(false);
     let editing = $state(false);
-    let confirmingVote = $state(false);
     let confirmingClose = $state(false);
     let confirmingDelete = $state(false);
     let reporting = $state(false);
@@ -57,7 +56,6 @@
         poll.id;
         selected = [...poll.my_choices];
         editing = false;
-        confirmingVote = false;
         confirmingClose = false;
         confirmingDelete = false;
         errors = {};
@@ -106,12 +104,10 @@
         if ([403, 404, 409].includes(apiError.status)) refreshAll();
     }
 
-    function askVote(event: SubmitEvent) {
+    async function submitVote(event: SubmitEvent) {
         event.preventDefault();
-        if (voteReady) confirmingVote = true;
-    }
+        if (!voteReady || busy) return;
 
-    async function submitVote() {
         busy = true;
         try {
             poll = await votePoll(poll.id, selected);
@@ -120,7 +116,6 @@
             handleWriteError(error);
         } finally {
             busy = false;
-            confirmingVote = false;
         }
     }
 
@@ -373,7 +368,7 @@
             {/if}
 
             {#if poll.can_vote}
-                <form onsubmit={askVote} class="flex flex-col gap-2">
+                <form onsubmit={submitVote} class="flex flex-col gap-2">
                     <p class="text-sm text-muted">
                         Vote para ver os resultados. O voto é único e definitivo.
                     </p>
@@ -485,18 +480,6 @@
     reference={poll.id}
     name={`a enquete "${poll.question}"`}
 />
-
-{#if confirmingVote}
-    <ConfirmDialog
-        title="Confirmar voto"
-        confirmLabel="votar"
-        {busy}
-        onconfirm={submitVote}
-        oncancel={() => (confirmingVote = false)}
-    >
-        O voto é único e definitivo: não dá para trocar nem retirar depois. Tem certeza?
-    </ConfirmDialog>
-{/if}
 
 {#if confirmingClose}
     <ConfirmDialog

@@ -135,6 +135,10 @@ export interface ProfileResponse {
     scraps_visible: boolean;
     /** Null quando o mural é privado, nunca mostre como zero. Respostas não contam. */
     scraps_count: number | null;
+    /** Total de fotos. Null quando o álbum está fechado para quem olha, igual ao 403 da listagem. */
+    photos_count: number | null;
+    /** Total de vídeos, com a mesma regra de visibilidade das fotos. */
+    videos_count: number | null;
     can_write_scrap: boolean;
     can_write_testimonial: boolean;
     /** Só os aceitos, e nunca null: depoimento não tem privacidade de leitura. */

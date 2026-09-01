@@ -2,6 +2,7 @@
     import "./layout.css";
     import { Toaster } from "svelte-sonner";
     import EmailVerificationBanner from "#lib/components/EmailVerificationBanner.svelte";
+    import Footer from "#lib/components/Footer.svelte";
     import GuestNavbar from "#lib/components/GuestNavbar.svelte";
     import LinkPrompt from "#lib/components/LinkPrompt.svelte";
     import Navbar from "#lib/components/Navbar.svelte";
@@ -80,3 +81,7 @@
 <TermsGate />
 
 {@render children()}
+
+{#if auth.user}
+    <Footer />
+{/if}
