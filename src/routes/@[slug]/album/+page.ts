@@ -1,8 +1,9 @@
 import { error } from "@sveltejs/kit";
+import { fetchProfileAlbums } from "#lib/album";
 import { ApiError } from "#lib/error";
 import { MEDIA_COUNT_LIMIT, fetchProfileMedia } from "#lib/media";
 import { fetchProfile } from "#lib/profile";
-import type { Media, MediaCounts, MediaKind } from "#lib/types";
+import type { AlbumSummary, Media, MediaCounts, MediaKind } from "#lib/types";
 import type { PageLoadEvent } from "./$types";
 
 function readKind(value: string | null): MediaKind | null {
@@ -34,12 +35,17 @@ export async function load({ params, url, fetch }: PageLoadEvent) {
     const isOwner = profile.relationship === "self";
 
     try {
-        const page = await fetchProfileMedia(params.slug, kind, null, undefined, fetch);
+        const [page, albumPage] = await Promise.all([
+            fetchProfileMedia(params.slug, kind, null, undefined, fetch),
+            fetchProfileAlbums(params.slug, null, undefined, fetch),
+        ]);
         return {
             profile,
             kind,
             media: page.results,
             nextCursor: page.next_cursor,
+            albums: albumPage.results,
+            albumsCursor: albumPage.next_cursor,
             isPrivate: false,
             counts: isOwner ? await fetchCounts(params.slug, fetch) : null,
         };
@@ -51,6 +57,8 @@ export async function load({ params, url, fetch }: PageLoadEvent) {
                 kind,
                 media: [] as Media[],
                 nextCursor: null as string | null,
+                albums: [] as AlbumSummary[],
+                albumsCursor: null as string | null,
                 isPrivate: true,
                 counts: null as MediaCounts | null,
             };

@@ -6,9 +6,17 @@ export type ReportReason =
 
 export type ReportStatus = "open" | "reviewing" | "resolved" | "dismissed";
 
-/** Perfil mais os seis alvos de conteúdo. */
+/** Perfil mais os alvos de conteúdo. */
 export type ReportKind =
-    "profile" | "scrap" | "testimonial" | "community" | "topic" | "comment" | "poll";
+    | "profile"
+    | "scrap"
+    | "testimonial"
+    | "community"
+    | "topic"
+    | "comment"
+    | "poll"
+    | "media"
+    | "media_comment";
 
 /** Só os alvos que o admin remove e restaura. Perfil fica de fora: conta se suspende. */
 export type ReportContentKind = Exclude<ReportKind, "profile">;
@@ -165,6 +173,22 @@ export type ReportTarget =
           closes_at: string | null;
           is_deleted: boolean;
           options: string[];
+      }
+    | {
+          kind: "media";
+          id: string;
+          url: string;
+          media_kind: "photo" | "video";
+          caption: string | null;
+          is_deleted: boolean;
+      }
+    | {
+          kind: "media_comment";
+          id: string;
+          body: string;
+          media_url: string;
+          media_owner_slug: string;
+          is_deleted: boolean;
       };
 
 export interface ReportDetail {

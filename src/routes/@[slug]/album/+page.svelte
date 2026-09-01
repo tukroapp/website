@@ -1,14 +1,21 @@
 <script lang="ts">
     import { untrack } from "svelte";
+    import { goto } from "$app/navigation";
+    import { page } from "$app/state";
     import { toast } from "svelte-sonner";
+    import { ALBUM_PHOTOS_LIMIT, albumVisibilityLabel } from "#lib/album";
+    import AlbumFormDialog from "#lib/components/AlbumFormDialog.svelte";
     import Button from "#lib/components/Button.svelte";
     import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
     import EmptyState from "#lib/components/EmptyState.svelte";
     import LoadMore from "#lib/components/LoadMore.svelte";
+    import MediaComments from "#lib/components/MediaComments.svelte";
+    import ReportDialog from "#lib/components/ReportDialog.svelte";
     import TabPill from "#lib/components/TabPill.svelte";
     import { ApiError } from "#lib/error";
     import { compressImage } from "#lib/image";
     import {
+        MEDIA_CAPTION_MAX_LENGTH,
         MEDIA_KINDS,
         MEDIA_LIMITS,
         deleteMedia,
@@ -20,18 +27,41 @@
     } from "#lib/media";
     import { auth } from "#lib/state/user.svelte";
     import { toastApiError } from "#lib/toast";
+    import { EMAIL_GATE_HINT } from "#lib/verification";
     import type { Media, MediaKind } from "#lib/types";
 
     let { data } = $props();
 
     let media = $derived(data.media);
     let nextCursor = $derived(data.nextCursor);
+    let albums = $derived(data.albums);
     let counts = $derived(data.counts);
     let loading = $state(false);
     let busy = $state(false);
+    let creatingAlbum = $state(false);
+
+    let uploadAlbumId = $state("");
+    let uploadCaption = $state("");
+    let reportingPhoto = $state(false);
 
     let viewerIndex = $state<number | null>(null);
     let confirmingDelete = $state<Media | null>(null);
+
+    // Abre direto a foto de uma notificação de comentário (?media=id), se estiver carregada.
+    $effect(() => {
+        const wanted = page.url.searchParams.get("media");
+        if (!wanted) return;
+        const index = untrack(() => looseMedia).findIndex((item) => item.id === wanted);
+        if (index >= 0) untrack(() => (viewerIndex = index));
+    });
+
+    function bumpCommentCount(mediaId: string, delta: number) {
+        media = media.map((entry) =>
+            entry.id === mediaId
+                ? { ...entry, comments_count: Math.max(0, entry.comments_count + delta) }
+                : entry,
+        );
+    }
 
     let file = $state<File | null>(null);
     let preview = $state<string | null>(null);
@@ -39,6 +69,10 @@
     let uploading = $state(false);
     let compressing = $state(false);
     let progress = $state(0);
+
+    // A grade embaixo mostra só o que não está em álbum: o que está aparece no
+    // card do álbum. `media` continua inteiro porque a cota conta tudo.
+    const looseMedia = $derived(media.filter((item) => item.album_id === null));
 
     const profile = $derived(data.profile);
     const kind = $derived(data.kind);
@@ -134,11 +168,23 @@
         progress = 0;
         uploadError = null;
         try {
-            const created = await uploadMedia(file, (ratio) => (progress = ratio));
+            const created = await uploadMedia(
+                file,
+                { albumId: uploadAlbumId || null, caption: uploadCaption },
+                (ratio) => (progress = ratio),
+            );
             // A lista misturada e a lista daquele tipo recebem o item novo.
             if (kind === null || kind === created.kind) media = [created, ...media];
-            if (counts) counts[created.kind] += 1;
+            if (counts) counts = { ...counts, [created.kind]: counts[created.kind] + 1 };
+            if (created.album_id) {
+                albums = albums.map((entry) =>
+                    entry.id === created.album_id
+                        ? { ...entry, photos_count: entry.photos_count + 1 }
+                        : entry,
+                );
+            }
             clearFile();
+            uploadCaption = "";
             toast.success(created.kind === "photo" ? "Foto enviada" : "Vídeo enviado");
         } catch (error) {
             const code =
@@ -147,8 +193,9 @@
                     : null;
 
             // A cota é do servidor: o contador local passa a valer o que ele acabou de dizer.
-            if (code === "photo_limit_reached" && counts) counts.photo = MEDIA_LIMITS.photo;
-            if (code === "video_limit_reached" && counts) counts.video = MEDIA_LIMITS.video;
+            if (code === "media_limit_reached" && counts && selectedKind) {
+                counts = { ...counts, [selectedKind]: MEDIA_LIMITS[selectedKind] };
+            }
 
             toastApiError(error);
         } finally {
@@ -172,15 +219,15 @@
         }
 
         media = media.filter((entry) => entry.id !== item.id);
-        if (counts) counts[item.kind] = Math.max(0, counts[item.kind] - 1);
+        if (counts) counts = { ...counts, [item.kind]: Math.max(0, counts[item.kind] - 1) };
         viewerIndex = null;
         busy = false;
         confirmingDelete = null;
     }
 
     function step(offset: number) {
-        if (viewerIndex === null || media.length === 0) return;
-        viewerIndex = (viewerIndex + offset + media.length) % media.length;
+        if (viewerIndex === null || looseMedia.length === 0) return;
+        viewerIndex = (viewerIndex + offset + looseMedia.length) % looseMedia.length;
     }
 
     function onKeyDown(event: KeyboardEvent) {
@@ -224,6 +271,62 @@
     {#if data.isPrivate}
         <EmptyState>Este perfil mantém o álbum privado.</EmptyState>
     {:else}
+        <section class="flex flex-col gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="text-base font-bold text-content">Álbuns</h2>
+                {#if isOwner}
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!auth.canWrite}
+                        title={auth.canWrite ? undefined : EMAIL_GATE_HINT}
+                        onclick={() => (creatingAlbum = true)}
+                    >
+                        criar álbum
+                    </Button>
+                {/if}
+            </div>
+
+            {#if albums.length === 0}
+                <p class="text-sm text-muted">Nenhum álbum ainda.</p>
+            {:else}
+                <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {#each albums as album (album.id)}
+                        <li>
+                            <a href="/album/{album.id}" class="block">
+                                <div
+                                    class="aspect-square w-full overflow-hidden border border-line"
+                                >
+                                    {#if album.cover_url}
+                                        <img
+                                            src={album.cover_url}
+                                            alt={album.title}
+                                            loading="lazy"
+                                            class="size-full object-cover"
+                                        />
+                                    {:else}
+                                        <div
+                                            class="flex size-full items-center justify-center bg-canvas text-xs text-muted"
+                                        >
+                                            sem capa
+                                        </div>
+                                    {/if}
+                                </div>
+                                <span class="mt-1 block truncate text-sm font-medium text-content">
+                                    {album.title}
+                                </span>
+                                <span class="block truncate text-xs text-muted">
+                                    {album.photos_count}
+                                    {album.photos_count === 1 ? "foto" : "fotos"}
+                                    {#if isOwner}· {albumVisibilityLabel(album.visibility)}{/if}
+                                </span>
+                            </a>
+                        </li>
+                    {/each}
+                </ul>
+            {/if}
+        </section>
+
         <nav class="flex flex-wrap gap-2">
             {#each tabs as tab}
                 <TabPill href={tabHref(tab.value)} active={kind === tab.value}>
@@ -287,7 +390,7 @@
                                 ></video>
                             {/if}
 
-                            <div class="flex min-w-0 flex-col gap-1">
+                            <div class="flex min-w-0 flex-1 flex-col gap-1.5">
                                 <p class="truncate text-sm text-content">{file.name}</p>
                                 <p class="text-xs text-muted">
                                     {selectedKind ? mediaKindLabel(selectedKind) : "arquivo"} · {formatSize(
@@ -301,6 +404,30 @@
                                         {mediaKindLabel(selectedKind, true)}. Apague algum item
                                         antes de enviar outro.
                                     </p>
+                                {/if}
+
+                                {#if selectedKind === "photo" && albums.length > 0}
+                                    <select
+                                        bind:value={uploadAlbumId}
+                                        class="w-full rounded-theme border-line bg-canvas px-2 py-1 text-sm text-content focus:border-primary focus:ring-primary"
+                                    >
+                                        <option value="">sem álbum (foto solta)</option>
+                                        {#each albums as album (album.id)}
+                                            <option value={album.id}>
+                                                {album.title} ({album.photos_count}/{ALBUM_PHOTOS_LIMIT})
+                                            </option>
+                                        {/each}
+                                    </select>
+                                {/if}
+
+                                {#if selectedKind === "photo"}
+                                    <textarea
+                                        bind:value={uploadCaption}
+                                        rows="2"
+                                        maxlength={MEDIA_CAPTION_MAX_LENGTH}
+                                        placeholder="Legenda (opcional)"
+                                        class="w-full rounded-theme border border-line bg-canvas px-2 py-1 text-sm text-content focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                    ></textarea>
                                 {/if}
 
                                 <div class="flex flex-wrap gap-2">
@@ -346,11 +473,11 @@
             </section>
         {/if}
 
-        {#if media.length === 0}
-            <EmptyState>{loading ? "Carregando..." : "Nada no álbum ainda."}</EmptyState>
+        {#if looseMedia.length === 0}
+            <EmptyState>{loading ? "Carregando..." : "Nada fora dos álbuns ainda."}</EmptyState>
         {:else}
             <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {#each media as item, index (item.id)}
+                {#each looseMedia as item, index (item.id)}
                     <li class="flex flex-col gap-1">
                         <button
                             type="button"
@@ -364,6 +491,13 @@
                                     class="absolute end-1 bottom-1 rounded-theme bg-black/60 px-1.5 py-0.5 text-xs text-white"
                                 >
                                     vídeo
+                                </span>
+                            {:else if item.comments_count > 0}
+                                <span
+                                    class="absolute end-1 bottom-1 rounded-theme bg-black/60 px-1.5 py-0.5 text-xs text-white"
+                                >
+                                    {item.comments_count}
+                                    {item.comments_count === 1 ? "comentário" : "comentários"}
                                 </span>
                             {/if}
                         </button>
@@ -387,11 +521,13 @@
     {/if}
 </main>
 
-{#if viewerIndex !== null && media[viewerIndex]}
-    {@const item = media[viewerIndex]}
-    <div class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/80 p-4">
-        <div class="flex w-full max-w-4xl items-center justify-between gap-2 text-sm text-white">
-            <span>{viewerIndex + 1} de {media.length}</span>
+{#if viewerIndex !== null && looseMedia[viewerIndex]}
+    {@const item = looseMedia[viewerIndex]}
+    <div
+        class="fixed inset-0 z-50 flex flex-col items-center gap-3 overflow-y-auto bg-black/80 p-4"
+    >
+        <div class="flex w-full max-w-2xl items-center justify-between gap-2 text-sm text-white">
+            <span>{viewerIndex + 1} de {looseMedia.length}</span>
             <button
                 type="button"
                 onclick={() => (viewerIndex = null)}
@@ -404,8 +540,8 @@
         {#if item.kind === "photo"}
             <img
                 src={item.url}
-                alt="Foto de {profile.name}"
-                class="max-h-[70vh] max-w-full object-contain"
+                alt={item.caption ?? `Foto de ${profile.name}`}
+                class="max-h-[65vh] max-w-full object-contain"
             />
         {:else}
             <!-- svelte-ignore a11y_media_has_caption -->
@@ -414,25 +550,63 @@
                 controls
                 autoplay
                 preload="metadata"
-                class="max-h-[70vh] max-w-full"
+                class="max-h-[65vh] max-w-full"
             ></video>
         {/if}
 
-        <div class="flex w-full max-w-4xl items-center justify-between gap-2">
+        <div class="flex w-full max-w-2xl items-center justify-between gap-2">
             <Button size="sm" variant="outline" onclick={() => step(-1)}>anterior</Button>
-            {#if isOwner}
-                <Button
-                    size="sm"
-                    variant="danger"
-                    disabled={busy}
-                    onclick={() => (confirmingDelete = item)}
-                >
-                    apagar
-                </Button>
-            {/if}
+            <div class="flex items-center gap-3">
+                {#if auth.user}
+                    <button
+                        type="button"
+                        class="cursor-pointer text-xs text-white underline underline-offset-2"
+                        onclick={() => (reportingPhoto = true)}
+                    >
+                        denunciar {mediaKindLabel(item.kind)}
+                    </button>
+                {/if}
+                {#if isOwner}
+                    <button
+                        type="button"
+                        class="cursor-pointer text-xs text-white underline underline-offset-2"
+                        disabled={busy}
+                        onclick={() => (confirmingDelete = item)}
+                    >
+                        apagar
+                    </button>
+                {/if}
+            </div>
             <Button size="sm" variant="outline" onclick={() => step(1)}>próximo</Button>
         </div>
+
+        {#if item.caption}
+            <p
+                class="w-full max-w-2xl rounded-theme bg-surface p-3 text-sm whitespace-pre-wrap text-content"
+            >
+                {item.caption}
+            </p>
+        {/if}
+
+        {#if item.kind === "photo"}
+            <div class="w-full max-w-2xl rounded-theme bg-surface p-3">
+                <MediaComments
+                    mediaId={item.id}
+                    ownerSlug={profile.slug}
+                    oncountchange={(delta) => bumpCommentCount(item.id, delta)}
+                />
+            </div>
+        {/if}
     </div>
+{/if}
+
+{#if viewerIndex !== null && looseMedia[viewerIndex]}
+    <ReportDialog
+        bind:open={reportingPhoto}
+        kind="media"
+        reference={looseMedia[viewerIndex].id}
+        name={looseMedia[viewerIndex].kind === "video" ? "este vídeo" : "esta foto"}
+    />
 {/if}
 
 {#if confirmingDelete}
@@ -447,3 +621,5 @@
         O arquivo sai do álbum e do servidor. Não dá para desfazer.
     </ConfirmDialog>
 {/if}
+
+<AlbumFormDialog bind:open={creatingAlbum} onsaved={(album) => goto(`/album/${album.id}`)} />

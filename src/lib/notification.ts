@@ -62,6 +62,7 @@ const MESSAGES: Record<NotificationKind, string> = {
     topic_reply: "respondeu seu comentário no fórum",
     // Agregada: uma só notificação enquanto não lida, então fala no plural e não nomeia ninguém.
     new_fan: "Você tem novos fãs",
+    media_comment: "comentou na sua foto",
 };
 
 export function notificationMessage(notification: Notification): string {
@@ -98,6 +99,10 @@ export function notificationHref(notification: Notification): string {
         case "new_fan":
             // Vai para a sua lista de fãs, não para o perfil de quem virou fã.
             return auth.user ? `/@${auth.user.slug}/fans` : "/";
+        case "media_comment":
+            return notification.media_id
+                ? `${profile}/album?media=${notification.media_id}`
+                : `${profile}/album`;
         case "testimonial_received":
             return "/testimonials";
         case "scrap_received":

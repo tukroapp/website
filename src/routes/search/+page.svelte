@@ -16,13 +16,11 @@
     let loading = $state(false);
 
     // O formulário parte dos filtros da URL e é reidratado quando a navegação muda.
-    let form = $state({ q: "", city: "", min_age: "", max_age: "", interest: "" });
+    let form = $state({ q: "", city: "", interest: "" });
     $effect(() => {
         form = {
             q: data.filters.q ?? "",
             city: data.filters.city ?? "",
-            min_age: data.filters.min_age?.toString() ?? "",
-            max_age: data.filters.max_age?.toString() ?? "",
             interest: data.filters.interest ?? "",
         };
     });
@@ -82,17 +80,6 @@
             <div class="flex flex-col gap-1.5">
                 <label for="interest" class="text-sm font-medium text-content">Interesse</label>
                 <Input id="interest" type="text" bind:value={form.interest} />
-            </div>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2">
-            <div class="flex flex-col gap-1.5">
-                <label for="min_age" class="text-sm font-medium text-content">Idade mínima</label>
-                <Input id="min_age" type="number" min="0" bind:value={form.min_age} />
-            </div>
-            <div class="flex flex-col gap-1.5">
-                <label for="max_age" class="text-sm font-medium text-content">Idade máxima</label>
-                <Input id="max_age" type="number" min="0" bind:value={form.max_age} />
             </div>
         </div>
 

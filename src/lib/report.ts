@@ -41,7 +41,14 @@ export const REPORT_KINDS: { value: ReportKind; label: string }[] = [
     { value: "topic", label: "tópico" },
     { value: "comment", label: "comentário" },
     { value: "poll", label: "enquete" },
+    { value: "media", label: "foto" },
+    { value: "media_comment", label: "comentário de foto" },
 ];
+
+/** O enum usa `_`, mas a rota usa `-`. Só o `media_comment` diverge hoje. */
+function kindPathSegment(kind: ReportKind): string {
+    return kind === "media_comment" ? "media-comment" : kind;
+}
 
 export function reportReasonLabel(reason: ReportReason): string {
     return REPORT_REASONS.find((item) => item.value === reason)?.label ?? reason;
@@ -68,7 +75,7 @@ export function submitReport(
 ): Promise<ReportCreated> {
     return apiFetch
         .post<ApiResponse<ReportCreated>>(
-            `/api/v1/report/${kind}/${encodeURIComponent(reference)}`,
+            `/api/v1/report/${kindPathSegment(kind)}/${encodeURIComponent(reference)}`,
             payload,
             {},
             fetchFn,

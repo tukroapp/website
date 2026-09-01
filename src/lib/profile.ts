@@ -86,8 +86,6 @@ export function fetchBirthdays(fetchFn: typeof fetch = fetch): Promise<BirthdayR
 export interface ProfileSearchFilters {
     q?: string;
     city?: string;
-    min_age?: number;
-    max_age?: number;
     interest?: string;
     cursor?: string | null;
     limit?: number;

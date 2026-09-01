@@ -11,7 +11,8 @@ export type NotificationKind =
     | "community_join_accepted"
     | "topic_comment"
     | "topic_reply"
-    | "new_fan";
+    | "new_fan"
+    | "media_comment";
 
 export interface Notification {
     id: string;
@@ -30,6 +31,8 @@ export interface Notification {
     topic_id: string | null;
     /** Preenchido em `topic_reply`, e o link abre ele pela rota de contexto. */
     comment_id: string | null;
+    /** Preenchido em `media_comment`: a foto comentada. */
+    media_id: string | null;
 }
 
 export interface UnreadCountResponse {

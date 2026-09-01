@@ -351,6 +351,40 @@
                         <li>· {option}</li>
                     {/each}
                 </ul>
+            {:else if target.kind === "media"}
+                <p class="text-xs text-muted">
+                    {target.media_kind === "video" ? "Vídeo" : "Foto"} do álbum
+                </p>
+                {#if target.media_kind === "video"}
+                    <!-- svelte-ignore a11y_media_has_caption -->
+                    <video src={target.url} controls class="max-h-80 max-w-full rounded-theme"
+                    ></video>
+                {:else}
+                    <img
+                        src={target.url}
+                        alt={target.caption ?? "Foto denunciada"}
+                        class="max-h-80 max-w-full rounded-theme border border-line object-contain"
+                    />
+                {/if}
+                {#if target.caption}
+                    <p class="text-sm whitespace-pre-wrap text-content">{target.caption}</p>
+                {/if}
+            {:else if target.kind === "media_comment"}
+                <p class="text-xs text-muted">
+                    Comentário numa foto de
+                    <a
+                        href="/@{target.media_owner_slug}"
+                        class="text-primary underline underline-offset-2"
+                    >
+                        @{target.media_owner_slug}
+                    </a>
+                </p>
+                <img
+                    src={target.media_url}
+                    alt="Foto comentada"
+                    class="max-h-48 max-w-full rounded-theme border border-line object-contain"
+                />
+                <p class="text-sm break-words whitespace-pre-wrap text-content">{target.body}</p>
             {/if}
 
             {#if contentAction}

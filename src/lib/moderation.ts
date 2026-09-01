@@ -65,7 +65,9 @@ export function restoreContent(
     fetchFn: typeof fetch = fetch,
 ): Promise<void> {
     const body = reason.trim() === "" ? {} : { reason: reason.trim() };
-    return apiFetch.post<void>(`/api/v1/admin/content/${kind}/${id}/restore`, body, {}, fetchFn);
+    // O enum usa `_`, a rota usa `-`.
+    const segment = kind === "media_comment" ? "media-comment" : kind;
+    return apiFetch.post<void>(`/api/v1/admin/content/${segment}/${id}/restore`, body, {}, fetchFn);
 }
 
 /** Ações de moderação sobre uma conta, da mais nova para a mais antiga. */
