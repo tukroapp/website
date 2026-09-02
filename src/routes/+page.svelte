@@ -89,7 +89,11 @@
             count: profile.testimonials_count,
         },
         { label: "amigos", href: `/@${profile.slug}/friends`, count: profile.friends_count },
-        { label: "comunidades", href: "/community/mine", count: null },
+        {
+            label: "comunidades",
+            href: "/community/mine",
+            count: profile.communities_count,
+        },
     ]);
 
     async function respond(request: FriendRequestItem, accept: boolean) {
@@ -425,7 +429,12 @@
             {/if}
         </Card>
 
-        <Card title="comunidades" linkHref="/community/mine" linkLabel="ver todas" compact>
+        <Card
+            title="comunidades ({profile.communities_count ?? 0})"
+            linkHref="/community/mine"
+            linkLabel="ver todas"
+            compact
+        >
             {#if data.communities.length === 0}
                 <p class="text-sm text-muted">
                     Você ainda não entrou em nenhuma.

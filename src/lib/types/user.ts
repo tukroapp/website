@@ -148,6 +148,8 @@ export interface ProfileResponse {
     rating: RatingSummary;
     /** Null para anônimo, para o dono do perfil e para quem ainda não avaliou. */
     my_rating: MyRating | null;
+    /** Total de comunidades. Null quando o perfil detalhado está fechado, igual ao 403 da listagem. */
+    communities_count: number | null;
     /** Total de fãs, sempre presente. */
     fans_count: number;
     /** De quantos perfis este é fã (ídolos). */

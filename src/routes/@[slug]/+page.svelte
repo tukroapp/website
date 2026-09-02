@@ -599,25 +599,28 @@
                 </p>
             {/if}
 
-            <!-- Rótulo em cima, valor embaixo: contadores e avaliações formam uma
-                 faixa só de duas linhas, com as duas alinhadas entre as colunas. -->
-            <ul class="flex flex-wrap items-start gap-x-5 gap-y-2 text-xs text-muted">
+            <!-- Rótulo em cima, valor embaixo. Em grade, e não em flex-wrap, para as
+                 colunas ficarem alinhadas entre as linhas em qualquer largura. -->
+            <ul class="grid grid-cols-3 gap-x-4 gap-y-3 text-xs text-muted sm:grid-cols-6">
                 {#each counters as counter}
-                    <li class="flex flex-col gap-0.5 whitespace-nowrap">
-                        <span class="flex items-center gap-1">
-                            <Icon name={counter.icon} class="size-4" />
+                    <li class="flex min-w-0 flex-col gap-0.5">
+                        <span class="flex items-center gap-1 truncate">
+                            <Icon name={counter.icon} class="size-4 shrink-0" />
                             {counter.label}
                         </span>
-                        <span class="flex min-h-5 items-center font-bold text-content">
+                        <span class="flex min-h-5 items-center truncate font-bold text-content">
                             {counter.value}
                         </span>
                     </li>
                 {/each}
+            </ul>
 
+            <!-- As avaliações ficam numa linha só, as três lado a lado. -->
+            <ul class="grid grid-cols-3 gap-x-4 gap-y-3 text-xs text-muted">
                 {#each RATING_AXES as axis}
                     {@const value = profile.rating[axis.key]}
-                    <li class="flex flex-col gap-0.5 whitespace-nowrap">
-                        <span>{axis.label}</span>
+                    <li class="flex min-w-0 flex-col gap-0.5">
+                        <span class="truncate">{axis.label}</span>
                         <span class="flex min-h-5 items-center gap-px">
                             {#each { length: RATING_MAX }, index}
                                 <RatingIcon
@@ -884,7 +887,7 @@
         <div class="flex flex-col gap-2 rounded-theme border border-line bg-surface p-3">
             <div class="flex items-center justify-between border-b border-line pb-1">
                 <h2 class="text-sm font-bold text-content">
-                    comunidades ({data.communities.length})
+                    comunidades ({profile.communities_count ?? data.communities.length})
                 </h2>
                 <a
                     href={isOwner ? "/community/mine" : `/@${profile.slug}/community`}
