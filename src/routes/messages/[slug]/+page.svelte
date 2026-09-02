@@ -179,9 +179,11 @@
 
 <svelte:head><title>Conversa com {counterpart.name} | Tukro</title></svelte:head>
 
-<main class="mx-auto flex h-[calc(100dvh-3rem)] w-full max-w-2xl flex-col">
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-theme border border-line">
     <div class="flex items-center gap-3 border-b border-line bg-surface p-3">
-        <a href="/messages" class="text-sm text-primary underline underline-offset-2">voltar</a>
+        <a href="/messages" class="text-sm text-primary underline underline-offset-2 lg:hidden">
+            voltar
+        </a>
 
         <a href="/@{counterpart.slug}" class="ms-1 flex min-w-0 items-center gap-2">
             <Avatar
@@ -204,7 +206,7 @@
         {/if}
     </div>
 
-    <div bind:this={scroller} class="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+    <div bind:this={scroller} class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
         {#if olderCursor}
             <div class="flex justify-center">
                 <Button size="sm" variant="outline" disabled={loadingOlder} onclick={loadOlder}>
@@ -266,7 +268,7 @@
         </div>
         <FieldError messages={errors.body} />
     </form>
-</main>
+</div>
 
 {#if confirmingHide}
     <ConfirmDialog

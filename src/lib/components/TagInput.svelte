@@ -46,8 +46,10 @@
     }
 </script>
 
+<!-- A borda e o foco são da caixa toda; o input de dentro entra sem borda,
+     senão o plugin de forms desenha a moldura escura padrão dele. -->
 <div
-    class="flex flex-wrap items-center gap-1.5 rounded-theme border border-line bg-canvas px-2 py-1.5"
+    class="flex flex-wrap items-center gap-1.5 rounded-theme border border-line bg-canvas px-2 py-1.5 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
 >
     {#each value as item, index (item)}
         <span
@@ -73,6 +75,6 @@
         onblur={add}
         placeholder={full ? "Limite atingido" : placeholder}
         disabled={full}
-        class="min-w-32 flex-1 bg-transparent py-0.5 text-base text-content placeholder:text-muted focus:outline-none disabled:opacity-50 sm:text-sm"
+        class="min-w-32 flex-1 border-0 bg-transparent p-0 py-0.5 text-base text-content placeholder:text-muted focus:ring-0 focus:outline-none disabled:opacity-50 sm:text-sm"
     />
 </div>

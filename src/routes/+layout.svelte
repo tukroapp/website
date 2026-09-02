@@ -1,5 +1,6 @@
 <script lang="ts">
     import "./layout.css";
+    import { page } from "$app/state";
     import { Toaster } from "svelte-sonner";
     import EmailVerificationBanner from "#lib/components/EmailVerificationBanner.svelte";
     import Footer from "#lib/components/Footer.svelte";
@@ -13,6 +14,9 @@
     import { auth } from "#lib/state/user.svelte";
 
     let { children } = $props();
+
+    /** Telas que ocupam a viewport inteira e rolam por dentro, sem rolagem de página. */
+    const fullHeight = $derived(page.url.pathname.startsWith("/messages"));
 
     // A splash de boot vive no app.html, então quem a tira é a primeira montagem.
     $effect(() => {
@@ -70,18 +74,33 @@
         },
     }}
 />
-{#if auth.user}
-    <Navbar />
-    <EmailVerificationBanner />
-{:else}
-    <GuestNavbar />
-{/if}
-
 <LinkPrompt />
 <TermsGate />
 
-{@render children()}
+<!-- Grade de três faixas: topo, conteúdo e rodapé. Nas telas de altura cheia a
+     grade recebe altura fixa, e só assim a faixa do meio (1fr) vira uma altura
+     definida para o conteúdo se ajustar; nas demais ela cresce com a página. -->
+<div
+    class="grid grid-rows-[auto_minmax(0,1fr)_auto] {fullHeight
+        ? 'h-dvh overflow-hidden'
+        : 'min-h-dvh'}"
+>
+    <div>
+        {#if auth.user}
+            <Navbar />
+            <EmailVerificationBanner />
+        {:else}
+            <GuestNavbar />
+        {/if}
+    </div>
 
-{#if auth.user}
-    <Footer />
-{/if}
+    <div class="flex min-h-0 flex-col">
+        {@render children()}
+    </div>
+
+    {#if auth.user}
+        <Footer />
+    {:else}
+        <div></div>
+    {/if}
+</div>

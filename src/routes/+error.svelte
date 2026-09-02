@@ -49,7 +49,7 @@
 
 <svelte:head><title>{title} | Tukro</title></svelte:head>
 
-<main class="flex min-h-[calc(100dvh-3.25rem)] items-center justify-center p-4">
+<main class="flex flex-1 items-center justify-center p-4">
     <div
         class="flex w-full max-w-sm flex-col items-center gap-6 rounded-theme border border-line bg-surface px-6 py-10 text-center shadow-sm"
     >
