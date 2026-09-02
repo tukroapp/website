@@ -3,17 +3,20 @@
 
     interface Props {
         axis: RatingAxisKey;
-        filled: boolean;
+        /** Quanto do ícone fica preenchido, de 0 (vazio) a 1 (cheio). */
+        fill: number;
         class?: string;
     }
 
-    let { axis, filled, class: className = "" }: Props = $props();
+    let { axis, fill, class: className = "" }: Props = $props();
 
-    /** Heroicons 16px solid: face-smile, cube e heart. */
+    const percent = $derived(Math.min(Math.max(fill, 0), 1) * 100);
+
+    /** Heroicons 24px solid: face-smile, cube e heart, o par exato dos contornos. */
     const SOLID: Record<RatingAxisKey, string> = {
-        trusty: "M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM6 8c.552 0 1-.672 1-1.5S6.552 5 6 5s-1 .672-1 1.5S5.448 8 6 8Zm5-1.5c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S9.448 5 10 5s1 .672 1 1.5Zm.005 4.245a.75.75 0 0 0-1.06 0 2.75 2.75 0 0 1-3.89 0 .75.75 0 0 0-1.06 1.06 4.25 4.25 0 0 0 6.01 0 .75.75 0 0 0 0-1.06Z",
-        cool: "M8.372 1.349a.75.75 0 0 0-.744 0l-4.81 2.748L8 7.131l5.182-3.034-4.81-2.748ZM14 5.357 8.75 8.43v6.005l4.872-2.784A.75.75 0 0 0 14 11V5.357ZM7.25 14.435V8.43L2 5.357V11c0 .27.144.518.378.651l4.872 2.784Z",
-        sexy: "M2 6.342a3.375 3.375 0 0 1 6-2.088 3.375 3.375 0 0 1 5.997 2.26c-.063 2.134-1.618 3.76-2.955 4.784a14.437 14.437 0 0 1-2.676 1.61c-.02.01-.038.017-.05.022l-.014.006-.004.002h-.002a.75.75 0 0 1-.592.001h-.002l-.004-.003-.015-.006a5.528 5.528 0 0 1-.232-.107 14.395 14.395 0 0 1-2.535-1.557C3.564 10.22 1.999 8.558 1.999 6.38L2 6.342Z",
+        trusty: "M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-2.625 6c-.54 0-.828.419-.936.634a1.96 1.96 0 0 0-.189.866c0 .298.059.605.189.866.108.215.395.634.936.634.54 0 .828-.419.936-.634.13-.26.189-.568.189-.866 0-.298-.059-.605-.189-.866-.108-.215-.395-.634-.936-.634Zm4.314.634c.108-.215.395-.634.936-.634.54 0 .828.419.936.634.13.26.189.568.189.866 0 .298-.059.605-.189.866-.108.215-.395.634-.936.634-.54 0-.828-.419-.936-.634a1.96 1.96 0 0 1-.189-.866c0-.298.059-.605.189-.866Zm2.023 6.828a.75.75 0 1 0-1.06-1.06 3.75 3.75 0 0 1-5.304 0 .75.75 0 0 0-1.06 1.06 5.25 5.25 0 0 0 7.424 0Z",
+        cool: "M12.378 1.602a.75.75 0 0 0-.756 0L3 6.632l9 5.25 9-5.25-8.622-5.03ZM21.75 7.93l-9 5.25v9l8.628-5.032a.75.75 0 0 0 .372-.648V7.93ZM11.25 22.18v-9l-9-5.25v8.57a.75.75 0 0 0 .372.648l8.628 5.033Z",
+        sexy: "m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z",
     };
 
     /** Os mesmos três em 24px outline, para o que não foi preenchido. */
@@ -34,17 +37,9 @@
     };
 </script>
 
-{#if filled}
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 16 16"
-        fill="currentColor"
-        aria-hidden="true"
-        class="{COLORS[axis]} {className}"
-    >
-        <path fill-rule="evenodd" clip-rule="evenodd" d={SOLID[axis]} />
-    </svg>
-{:else}
+<!-- O contorno é a base e o ícone cheio vai por cima, recortado pela largura da
+     máscara: meia avaliação vira meio desenho, não um desenho espremido. -->
+<span class="relative inline-block shrink-0 {className}">
     <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
@@ -52,8 +47,26 @@
         stroke="currentColor"
         stroke-width="1.5"
         aria-hidden="true"
-        class="text-muted {className}"
+        class="size-full text-muted"
     >
         <path stroke-linecap="round" stroke-linejoin="round" d={OUTLINE[axis]} />
     </svg>
-{/if}
+
+    {#if percent > 0}
+        <span
+            class="absolute inset-y-0 left-0 overflow-hidden"
+            style="width: {percent}%"
+            aria-hidden="true"
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+                class="max-w-none {COLORS[axis]} {className}"
+            >
+                <path fill-rule="evenodd" clip-rule="evenodd" d={SOLID[axis]} />
+            </svg>
+        </span>
+    {/if}
+</span>

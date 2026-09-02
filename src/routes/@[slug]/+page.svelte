@@ -22,7 +22,7 @@
         sendFriendRequest,
     } from "#lib/friend";
     import { ageLabel, relationshipStatusLabel } from "#lib/profile";
-    import { RATING_AXES, RATING_MAX, deleteRating, rateProfile } from "#lib/rating";
+    import { RATING_AXES, RATING_MAX, axisFill, deleteRating, rateProfile } from "#lib/rating";
     import { loginUrl } from "#lib/redirect";
     import { auth } from "#lib/state/user.svelte";
     import { formatDate, relativeTime, timeSince } from "#lib/time";
@@ -625,7 +625,7 @@
                             {#each { length: RATING_MAX }, index}
                                 <RatingIcon
                                     axis={axis.key}
-                                    filled={index < Math.round(value.average ?? 0)}
+                                    fill={axisFill(value.average, index)}
                                     class="size-5"
                                 />
                             {/each}
@@ -656,7 +656,7 @@
                                 >
                                     <RatingIcon
                                         axis={axis.key}
-                                        filled={index < ratingForm[axis.key]}
+                                        fill={index < ratingForm[axis.key] ? 1 : 0}
                                         class="size-5"
                                     />
                                 </button>
