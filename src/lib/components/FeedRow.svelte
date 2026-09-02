@@ -38,8 +38,10 @@
         <a href="/@{item.actor.slug}" class={LINK}>{item.actor.name}</a>
 
         {#if item.kind === "testimonial_received"}
-            recebeu um depoimento{#if item.target_user}
-                de <a href="/@{item.target_user.slug}" class={LINK}>{item.target_user.name}</a>{/if}
+            recebeu um depoimento {#if item.target_user}
+                de <a href="/@{item.target_user.slug}" class={LINK}>
+                    {item.target_user.name}</a
+                >{/if}
         {:else if item.kind === "community_joined"}
             {#if group.count > 1}
                 entrou em {group.count} comunidades
